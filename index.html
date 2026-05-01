@@ -1131,7 +1131,7 @@
 
       peer.on('connection', incoming => {
         conn = incoming;
-        setupConnection();
+        conn.on('open', () => setupConnection());
       });
 
       peer.on('error', err => {
