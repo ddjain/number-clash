@@ -30,7 +30,7 @@ let playAgainReceived = false;
 
 let turnTimerId = null;
 let turnTimeLeft = 0;
-const TURN_TIME = 7;
+const TURN_TIME = 12;
 
 let opponentBestDist = Infinity;
 let opponentClosestGuess = null;
@@ -228,6 +228,7 @@ function applyConfigToSetup() {
   const slider = document.getElementById('number-slider');
   slider.max = max;
   slider.value = mid;
+  slider.disabled = false;
   document.getElementById('picked-number').textContent = mid;
   document.getElementById('setup-range-label').textContent = '1 \u2013 ' + max;
   document.getElementById('setup-range-max').textContent = max;
