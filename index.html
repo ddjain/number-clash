@@ -178,14 +178,16 @@
 
     .game-id-display code {
       flex: 1;
-      padding: 10px 14px;
+      padding: 12px 14px;
       background: var(--bg);
       border: 1px solid var(--border);
       border-radius: 8px;
       font-family: 'Courier New', monospace;
-      font-size: 1rem;
+      font-size: 1.4rem;
+      font-weight: 700;
       color: var(--accent2);
-      word-break: break-all;
+      text-align: center;
+      letter-spacing: 4px;
     }
 
     .join-row {
@@ -787,7 +789,7 @@
       </div>
       <label for="join-id-input">Enter opponent's Game ID</label>
       <div class="join-row">
-        <input type="text" id="join-id-input" placeholder="Paste game ID here" />
+        <input type="text" id="join-id-input" placeholder="e.g. K7M3X" style="text-transform:uppercase;" />
         <button id="btn-join" class="btn btn-accent" onclick="joinGame()">Join</button>
       </div>
       <p id="join-error" class="error-text"></p>
@@ -1178,6 +1180,16 @@
       }
     }
 
+    // --- Game Code Generator ---
+    const CODE_PREFIX = 'nc-';
+    const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+    function generateGameCode() {
+      let code = '';
+      for (let i = 0; i < 5; i++) code += CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)];
+      return code;
+    }
+
     // --- Lobby: Create Game ---
     function createGame() {
       resolveMyName();
@@ -1186,11 +1198,12 @@
       btn.disabled = true;
       btn.textContent = 'Connecting\u2026';
 
-      peer = new Peer();
+      const gameCode = generateGameCode();
+      peer = new Peer(CODE_PREFIX + gameCode);
       isCreator = true;
 
-      peer.on('open', id => {
-        document.getElementById('game-id-text').textContent = id;
+      peer.on('open', () => {
+        document.getElementById('game-id-text').textContent = gameCode;
         document.getElementById('game-id-box').style.display = 'flex';
         document.getElementById('create-status').style.display = 'block';
         btn.textContent = 'Game Created';
@@ -1202,6 +1215,26 @@
       });
 
       peer.on('error', err => {
+        if (err.type === 'unavailable-id') {
+          const retryCode = generateGameCode();
+          peer = new Peer(CODE_PREFIX + retryCode);
+          peer.on('open', () => {
+            document.getElementById('game-id-text').textContent = retryCode;
+            document.getElementById('game-id-box').style.display = 'flex';
+            document.getElementById('create-status').style.display = 'block';
+            btn.textContent = 'Game Created';
+          });
+          peer.on('connection', incoming => {
+            conn = incoming;
+            conn.on('open', () => setupConnection());
+          });
+          peer.on('error', e2 => {
+            btn.disabled = false;
+            btn.textContent = 'Generate Game ID';
+            showToast('Connection error: ' + e2.type);
+          });
+          return;
+        }
         btn.disabled = false;
         btn.textContent = 'Generate Game ID';
         showToast('Connection error: ' + err.type);
@@ -1219,12 +1252,14 @@
 
       const input = document.getElementById('join-id-input');
       const errorEl = document.getElementById('join-error');
-      const gameId = input.value.trim();
+      const rawId = input.value.trim().toUpperCase();
 
-      if (!gameId) {
+      if (!rawId) {
         errorEl.textContent = 'Please enter a game ID.';
         return;
       }
+
+      const peerId = rawId.startsWith(CODE_PREFIX.toUpperCase()) ? rawId.toLowerCase() : CODE_PREFIX + rawId;
 
       errorEl.textContent = '';
       const btn = document.getElementById('btn-join');
@@ -1235,7 +1270,7 @@
       isCreator = false;
 
       peer.on('open', () => {
-        conn = peer.connect(gameId, { reliable: true });
+        conn = peer.connect(peerId, { reliable: true });
         conn.on('open', () => setupConnection());
         conn.on('error', () => {
           errorEl.textContent = 'Could not connect. Check the game ID.';
