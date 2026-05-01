@@ -677,6 +677,47 @@
       padding: 16px 0;
     }
 
+    /* --- Secret Number Badge --- */
+    .secret-badge {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      margin-bottom: 12px;
+      font-size: 0.85rem;
+      color: var(--text-dim);
+    }
+
+    .secret-badge .secret-val {
+      font-weight: 800;
+      font-size: 1.1rem;
+      color: var(--accent2);
+      min-width: 28px;
+      text-align: center;
+      letter-spacing: 1px;
+    }
+
+    .secret-badge .btn-toggle-secret {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 0.7rem;
+      cursor: pointer;
+      font-weight: 600;
+      transition: border-color 0.2s;
+    }
+
+    .secret-badge .btn-toggle-secret:hover {
+      border-color: var(--accent2);
+      color: var(--text);
+    }
+
     /* --- Confetti --- */
     .confetti-container {
       position: absolute;
@@ -802,6 +843,12 @@
     <div id="session-score-game" class="session-score">
       <div style="color:var(--text-dim);font-size:0.75rem;">Session Score</div>
       <div class="score-nums"><span id="score-game-text"></span></div>
+    </div>
+
+    <div class="secret-badge">
+      <span>Your secret:</span>
+      <span id="secret-display" class="secret-val"></span>
+      <button class="btn-toggle-secret" id="btn-toggle-secret" onclick="toggleSecret()">Hide</button>
     </div>
 
     <div id="turn-indicator" class="turn-indicator turn-yours">Your turn &mdash; make a guess!</div>
@@ -1096,6 +1143,26 @@
 
     renderStats();
 
+    // --- Secret Number Display ---
+    let secretVisible = true;
+
+    function showSecretNumber() {
+      const display = document.getElementById('secret-display');
+      const btn = document.getElementById('btn-toggle-secret');
+      if (secretVisible) {
+        display.textContent = myNumber;
+        btn.textContent = 'Hide';
+      } else {
+        display.textContent = '\u2022\u2022\u2022';
+        btn.textContent = 'Show';
+      }
+    }
+
+    function toggleSecret() {
+      secretVisible = !secretVisible;
+      showSecretNumber();
+    }
+
     // --- Session Score ---
     function updateSessionScoreUI() {
       const show = sessionRounds > 0;
@@ -1298,7 +1365,10 @@
       knownHigh = MAX;
       isMyTurn = isCreator;
 
+      secretVisible = true;
+
       showScreen('game');
+      showSecretNumber();
       updateTurnUI();
       updateRangeUI();
       updateSessionScoreUI();
