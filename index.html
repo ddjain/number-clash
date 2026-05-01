@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Number Clash</title>
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f0f1a;
+      --card: #1a1a2e;
+      --card-alt: #16213e;
+      --accent: #7c3aed;
+      --accent2: #10b981;
+      --text: #e2e8f0;
+      --text-dim: #94a3b8;
+      --danger: #ef4444;
+      --border: #2d2d4a;
+      --radius: 12px;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+
+    .subtitle {
+      color: var(--text-dim);
+      font-size: 0.9rem;
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .screen {
+      display: none;
+      width: 100%;
+      max-width: 480px;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .screen.active { display: block; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 16px;
+    }
+
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-title .icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    .icon-create { background: rgba(124, 58, 237, 0.2); }
+    .icon-join { background: rgba(16, 185, 129, 0.2); }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+    }
+
+    input[type="text"],
+    input[type="number"] {
+      width: 100%;
+      padding: 10px 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input:focus { border-color: var(--accent); }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.1s, opacity 0.2s;
+      color: #fff;
+    }
+
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #6d28d9);
+    }
+
+    .btn-accent {
+      background: linear-gradient(135deg, var(--accent2), #059669);
+    }
+
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 0.8rem;
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .btn-outline:hover { border-color: var(--accent); }
+
+    .btn-block { width: 100%; }
+
+    .game-id-display {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .game-id-display code {
+      flex: 1;
+      padding: 10px 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      font-size: 1rem;
+      color: var(--accent2);
+      word-break: break-all;
+    }
+
+    .join-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .join-row input { flex: 1; }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .status-waiting {
+      background: rgba(234, 179, 8, 0.15);
+      color: #eab308;
+    }
+
+    .status-ready {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--accent2);
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .number-picker {
+      text-align: center;
+      padding: 16px 0;
+    }
+
+    .number-picker .big-number {
+      font-size: 3.5rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin: 8px 0;
+      line-height: 1;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: var(--border);
+      outline: none;
+      margin: 16px 0;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      cursor: pointer;
+      border: 2px solid var(--bg);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      cursor: pointer;
+      border: 2px solid var(--bg);
+    }
+
+    .setup-status {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin-top: 16px;
+    }
+
+    .player-status {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.85rem;
+    }
+
+    .player-status .check {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      transition: all 0.3s;
+    }
+
+    .check.pending {
+      background: rgba(148, 163, 184, 0.15);
+      color: var(--text-dim);
+    }
+
+    .check.done {
+      background: rgba(16, 185, 129, 0.2);
+      color: var(--accent2);
+    }
+
+    .turn-indicator {
+      text-align: center;
+      padding: 12px;
+      border-radius: 8px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      font-size: 0.95rem;
+    }
+
+    .turn-yours {
+      background: rgba(16, 185, 129, 0.12);
+      color: var(--accent2);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+
+    .turn-theirs {
+      background: rgba(124, 58, 237, 0.12);
+      color: var(--accent);
+      border: 1px solid rgba(124, 58, 237, 0.25);
+    }
+
+    .range-display {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      font-size: 0.9rem;
+      color: var(--text-dim);
+    }
+
+    .range-display .range-val {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .range-bar-container {
+      flex: 1;
+      height: 8px;
+      background: var(--border);
+      border-radius: 4px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .range-bar-fill {
+      position: absolute;
+      top: 0;
+      height: 100%;
+      border-radius: 4px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      transition: left 0.4s, width 0.4s;
+    }
+
+    .guess-input-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .guess-input-row input { flex: 1; }
+
+    .history {
+      max-height: 280px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding-right: 4px;
+    }
+
+    .history::-webkit-scrollbar { width: 4px; }
+    .history::-webkit-scrollbar-track { background: transparent; }
+    .history::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .history-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .history-item.you {
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.15);
+    }
+
+    .history-item.opponent {
+      background: rgba(124, 58, 237, 0.08);
+      border: 1px solid rgba(124, 58, 237, 0.15);
+    }
+
+    .history-item .turn-num {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .history-item.you .turn-num {
+      background: rgba(16, 185, 129, 0.2);
+      color: var(--accent2);
+    }
+
+    .history-item.opponent .turn-num {
+      background: rgba(124, 58, 237, 0.2);
+      color: var(--accent);
+    }
+
+    .history-item .guess-val {
+      font-weight: 700;
+      font-size: 1rem;
+      min-width: 28px;
+    }
+
+    .history-item .result-badge {
+      margin-left: auto;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .result-higher {
+      background: rgba(234, 179, 8, 0.15);
+      color: #eab308;
+    }
+
+    .result-lower {
+      background: rgba(59, 130, 246, 0.15);
+      color: #3b82f6;
+    }
+
+    .result-correct {
+      background: rgba(16, 185, 129, 0.2);
+      color: var(--accent2);
+    }
+
+    .gameover-card {
+      text-align: center;
+    }
+
+    .gameover-card .trophy { font-size: 3rem; margin-bottom: 8px; }
+
+    .gameover-card .winner-text {
+      font-size: 1.6rem;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .gameover-card .winner-text.win {
+      background: linear-gradient(135deg, var(--accent2), #34d399);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .gameover-card .winner-text.lose {
+      background: linear-gradient(135deg, var(--danger), #f87171);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .gameover-card .reveal {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin: 20px 0;
+    }
+
+    .reveal-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .reveal-item .reveal-label {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+    }
+
+    .reveal-item .reveal-num {
+      font-size: 2rem;
+      font-weight: 800;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 16px;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--card);
+      border: 1px solid var(--border);
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      opacity: 0;
+      transition: transform 0.3s, opacity 0.3s;
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .error-text {
+      color: var(--danger);
+      font-size: 0.8rem;
+      margin-top: 4px;
+      min-height: 1.2em;
+    }
+
+    .connection-status {
+      text-align: center;
+      margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- LOBBY SCREEN -->
+  <div id="screen-lobby" class="screen active">
+    <h1>Number Clash</h1>
+    <p class="subtitle">P2P number guessing game &mdash; no server needed</p>
+
+    <div class="card">
+      <div class="card-title">
+        <span class="icon icon-create">+</span>
+        Create Game
+      </div>
+      <p style="font-size:0.85rem;color:var(--text-dim);margin-bottom:12px;">
+        Share the game ID with your opponent to start.
+      </p>
+      <button id="btn-create" class="btn btn-primary btn-block" onclick="createGame()">
+        Generate Game ID
+      </button>
+      <div id="game-id-box" class="game-id-display" style="display:none;">
+        <code id="game-id-text"></code>
+        <button class="btn btn-outline btn-sm" onclick="copyGameId()">Copy</button>
+      </div>
+      <div id="create-status" class="connection-status" style="display:none;margin-top:12px;">
+        <span class="status-badge status-waiting"><span class="dot"></span> Waiting for opponent&hellip;</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <span class="icon icon-join">&#8594;</span>
+        Join Game
+      </div>
+      <label for="join-id-input">Enter opponent's Game ID</label>
+      <div class="join-row">
+        <input type="text" id="join-id-input" placeholder="Paste game ID here" />
+        <button id="btn-join" class="btn btn-accent" onclick="joinGame()">Join</button>
+      </div>
+      <p id="join-error" class="error-text"></p>
+    </div>
+  </div>
+
+  <!-- SETUP SCREEN -->
+  <div id="screen-setup" class="screen">
+    <h1>Number Clash</h1>
+    <p class="subtitle">Pick your secret number</p>
+
+    <div class="card">
+      <div class="card-title">Choose a number (1 &ndash; 100)</div>
+      <div class="number-picker">
+        <div id="picked-number" class="big-number">50</div>
+        <input type="range" id="number-slider" min="1" max="100" value="50" oninput="updatePicker(this.value)" />
+        <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--text-dim);">
+          <span>1</span><span>100</span>
+        </div>
+      </div>
+      <button id="btn-lock" class="btn btn-primary btn-block" onclick="lockNumber()" style="margin-top:12px;">
+        Lock Number
+      </button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Players</div>
+      <div class="setup-status">
+        <div class="player-status">
+          <div id="self-check" class="check pending">&#8230;</div>
+          <span>You</span>
+        </div>
+        <div class="player-status">
+          <div id="opponent-check" class="check pending">&#8230;</div>
+          <span>Opponent</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GAME SCREEN -->
+  <div id="screen-game" class="screen">
+    <h1>Number Clash</h1>
+
+    <div id="turn-indicator" class="turn-indicator turn-yours">Your turn &mdash; make a guess!</div>
+
+    <div class="card">
+      <div class="card-title">Your Guessing Range</div>
+      <div class="range-display">
+        <span id="range-low" class="range-val">1</span>
+        <div class="range-bar-container">
+          <div id="range-bar-fill" class="range-bar-fill" style="left:0%;width:100%;"></div>
+        </div>
+        <span id="range-high" class="range-val">100</span>
+      </div>
+      <div class="guess-input-row">
+        <input type="number" id="guess-input" min="1" max="100" placeholder="Enter guess" />
+        <button id="btn-guess" class="btn btn-accent" onclick="submitGuess()">Guess</button>
+      </div>
+      <p id="guess-error" class="error-text"></p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">History</div>
+      <div id="history" class="history"></div>
+    </div>
+  </div>
+
+  <!-- GAME OVER SCREEN -->
+  <div id="screen-gameover" class="screen">
+    <h1>Number Clash</h1>
+
+    <div class="card gameover-card">
+      <div class="trophy" id="gameover-emoji"></div>
+      <div id="gameover-text" class="winner-text"></div>
+      <p id="gameover-sub" style="color:var(--text-dim);font-size:0.9rem;"></p>
+
+      <div class="reveal">
+        <div class="reveal-item">
+          <span class="reveal-label">Your Number</span>
+          <span id="reveal-yours" class="reveal-num" style="color:var(--accent2);"></span>
+        </div>
+        <div class="reveal-item">
+          <span class="reveal-label">Opponent's Number</span>
+          <span id="reveal-opponent" class="reveal-num" style="color:var(--accent);"></span>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="requestPlayAgain()">Play Again</button>
+        <button class="btn btn-outline" onclick="leaveGame()">Leave</button>
+      </div>
+      <p id="play-again-status" style="color:var(--text-dim);font-size:0.8rem;margin-top:8px;"></p>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    const MIN = 1;
+    const MAX = 100;
+
+    let peer = null;
+    let conn = null;
+    let isCreator = false;
+
+    let myNumber = null;
+    let myNumberLocked = false;
+    let opponentNumberLocked = false;
+    let opponentNumber = null;
+
+    let isMyTurn = false;
+    let turnCount = 0;
+    let guessHistory = [];
+
+    let knownLow = MIN;
+    let knownHigh = MAX;
+
+    // --- Screen Management ---
+    function showScreen(id) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById('screen-' + id).classList.add('active');
+    }
+
+    // --- Toast ---
+    function showToast(msg) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      setTimeout(() => el.classList.remove('show'), 2500);
+    }
+
+    // --- Lobby: Create Game ---
+    function createGame() {
+      const btn = document.getElementById('btn-create');
+      btn.disabled = true;
+      btn.textContent = 'Connecting…';
+
+      peer = new Peer();
+      isCreator = true;
+
+      peer.on('open', id => {
+        document.getElementById('game-id-text').textContent = id;
+        document.getElementById('game-id-box').style.display = 'flex';
+        document.getElementById('create-status').style.display = 'block';
+        btn.textContent = 'Game Created';
+      });
+
+      peer.on('connection', incoming => {
+        conn = incoming;
+        setupConnection();
+      });
+
+      peer.on('error', err => {
+        btn.disabled = false;
+        btn.textContent = 'Generate Game ID';
+        showToast('Connection error: ' + err.type);
+      });
+    }
+
+    function copyGameId() {
+      const id = document.getElementById('game-id-text').textContent;
+      navigator.clipboard.writeText(id).then(() => showToast('Game ID copied!'));
+    }
+
+    // --- Lobby: Join Game ---
+    function joinGame() {
+      const input = document.getElementById('join-id-input');
+      const errorEl = document.getElementById('join-error');
+      const gameId = input.value.trim();
+
+      if (!gameId) {
+        errorEl.textContent = 'Please enter a game ID.';
+        return;
+      }
+
+      errorEl.textContent = '';
+      const btn = document.getElementById('btn-join');
+      btn.disabled = true;
+      btn.textContent = 'Joining…';
+
+      peer = new Peer();
+      isCreator = false;
+
+      peer.on('open', () => {
+        conn = peer.connect(gameId, { reliable: true });
+        conn.on('open', () => setupConnection());
+        conn.on('error', () => {
+          errorEl.textContent = 'Could not connect. Check the game ID.';
+          btn.disabled = false;
+          btn.textContent = 'Join';
+        });
+      });
+
+      peer.on('error', err => {
+        if (err.type === 'peer-unavailable') {
+          errorEl.textContent = 'Game not found. Check the ID and try again.';
+        } else {
+          errorEl.textContent = 'Connection error: ' + err.type;
+        }
+        btn.disabled = false;
+        btn.textContent = 'Join';
+      });
+    }
+
+    // --- Connection Setup ---
+    function setupConnection() {
+      showToast('Connected to opponent!');
+      showScreen('setup');
+
+      conn.on('data', handleMessage);
+      conn.on('close', handleDisconnect);
+      conn.on('error', () => handleDisconnect());
+    }
+
+    function handleDisconnect() {
+      showToast('Opponent disconnected.');
+      resetState();
+      showScreen('lobby');
+      resetLobbyUI();
+    }
+
+    function resetLobbyUI() {
+      const btnCreate = document.getElementById('btn-create');
+      btnCreate.disabled = false;
+      btnCreate.textContent = 'Generate Game ID';
+      document.getElementById('game-id-box').style.display = 'none';
+      document.getElementById('create-status').style.display = 'none';
+
+      const btnJoin = document.getElementById('btn-join');
+      btnJoin.disabled = false;
+      btnJoin.textContent = 'Join';
+      document.getElementById('join-id-input').value = '';
+      document.getElementById('join-error').textContent = '';
+    }
+
+    // --- Message Handler ---
+    function handleMessage(data) {
+      switch (data.type) {
+        case 'numberLocked':
+          opponentNumberLocked = true;
+          document.getElementById('opponent-check').textContent = '✓';
+          document.getElementById('opponent-check').className = 'check done';
+          checkBothLocked();
+          break;
+
+        case 'guess':
+          handleIncomingGuess(data.value);
+          break;
+
+        case 'feedback':
+          handleFeedback(data);
+          break;
+
+        case 'reveal':
+          opponentNumber = data.number;
+          document.getElementById('reveal-opponent').textContent = opponentNumber;
+          break;
+
+        case 'playAgain':
+          handlePlayAgainRequest();
+          break;
+      }
+    }
+
+    // --- Setup: Number Picker ---
+    function updatePicker(val) {
+      document.getElementById('picked-number').textContent = val;
+    }
+
+    function lockNumber() {
+      if (myNumberLocked) return;
+
+      myNumber = parseInt(document.getElementById('number-slider').value, 10);
+      myNumberLocked = true;
+
+      document.getElementById('btn-lock').disabled = true;
+      document.getElementById('btn-lock').textContent = 'Locked ✓';
+      document.getElementById('number-slider').disabled = true;
+
+      document.getElementById('self-check').textContent = '✓';
+      document.getElementById('self-check').className = 'check done';
+
+      conn.send({ type: 'numberLocked' });
+      checkBothLocked();
+    }
+
+    function checkBothLocked() {
+      if (myNumberLocked && opponentNumberLocked) {
+        showToast('Both players ready — game starting!');
+        setTimeout(startGame, 800);
+      }
+    }
+
+    // --- Game Start ---
+    function startGame() {
+      turnCount = 0;
+      guessHistory = [];
+      knownLow = MIN;
+      knownHigh = MAX;
+      isMyTurn = isCreator;
+
+      showScreen('game');
+      updateTurnUI();
+      updateRangeUI();
+      document.getElementById('history').innerHTML = '';
+      document.getElementById('guess-error').textContent = '';
+
+      if (isMyTurn) {
+        document.getElementById('guess-input').focus();
+      }
+    }
+
+    // --- Turn UI ---
+    function updateTurnUI() {
+      const indicator = document.getElementById('turn-indicator');
+      const guessInput = document.getElementById('guess-input');
+      const guessBtn = document.getElementById('btn-guess');
+
+      if (isMyTurn) {
+        indicator.textContent = 'Your turn — make a guess!';
+        indicator.className = 'turn-indicator turn-yours';
+        guessInput.disabled = false;
+        guessBtn.disabled = false;
+        guessInput.focus();
+      } else {
+        indicator.textContent = "Opponent's turn — waiting…";
+        indicator.className = 'turn-indicator turn-theirs';
+        guessInput.disabled = true;
+        guessBtn.disabled = true;
+      }
+    }
+
+    function updateRangeUI() {
+      document.getElementById('range-low').textContent = knownLow;
+      document.getElementById('range-high').textContent = knownHigh;
+
+      const total = MAX - MIN;
+      const left = ((knownLow - MIN) / total) * 100;
+      const width = ((knownHigh - knownLow) / total) * 100;
+      const fill = document.getElementById('range-bar-fill');
+      fill.style.left = left + '%';
+      fill.style.width = Math.max(width, 1) + '%';
+    }
+
+    // --- Guessing ---
+    function submitGuess() {
+      if (!isMyTurn) return;
+
+      const input = document.getElementById('guess-input');
+      const errorEl = document.getElementById('guess-error');
+      const val = parseInt(input.value, 10);
+
+      if (isNaN(val) || val < MIN || val > MAX) {
+        errorEl.textContent = `Enter a number between ${MIN} and ${MAX}.`;
+        return;
+      }
+
+      errorEl.textContent = '';
+      input.value = '';
+
+      conn.send({ type: 'guess', value: val });
+
+      isMyTurn = false;
+      updateTurnUI();
+    }
+
+    // --- Handle incoming guess from opponent (auto-validate) ---
+    function handleIncomingGuess(val) {
+      let result;
+      if (val === myNumber) {
+        result = 'correct';
+      } else if (val < myNumber) {
+        result = 'higher';
+      } else {
+        result = 'lower';
+      }
+
+      conn.send({ type: 'feedback', result: result, guess: val, myNumber: result === 'correct' ? myNumber : undefined });
+
+      turnCount++;
+      addHistoryItem('opponent', val, result, turnCount);
+
+      if (result === 'correct') {
+        opponentNumber = null;
+        setTimeout(() => endGame(false, val), 600);
+      } else {
+        isMyTurn = true;
+        updateTurnUI();
+      }
+    }
+
+    // --- Handle feedback for your own guess ---
+    function handleFeedback(data) {
+      const { result, guess, myNumber: theirNumber } = data;
+
+      turnCount++;
+      addHistoryItem('you', guess, result, turnCount);
+
+      if (result === 'correct') {
+        opponentNumber = theirNumber || guess;
+        setTimeout(() => endGame(true, guess), 600);
+      } else {
+        if (result === 'higher') {
+          knownLow = Math.max(knownLow, guess + 1);
+        } else {
+          knownHigh = Math.min(knownHigh, guess - 1);
+        }
+        updateRangeUI();
+      }
+    }
+
+    // --- History ---
+    function addHistoryItem(who, guess, result, turn) {
+      const container = document.getElementById('history');
+      const item = document.createElement('div');
+      item.className = 'history-item ' + who;
+
+      const label = who === 'you' ? 'You' : 'Opponent';
+
+      item.innerHTML = `
+        <span class="turn-num">${turn}</span>
+        <span>${label} guessed</span>
+        <span class="guess-val">${guess}</span>
+        <span class="result-badge result-${result}">${result === 'higher' ? '↑ Higher' : result === 'lower' ? '↓ Lower' : '✓ Correct'}</span>
+      `;
+
+      container.prepend(item);
+    }
+
+    // --- Game Over ---
+    function endGame(iWon, winningGuess) {
+      const emojiEl = document.getElementById('gameover-emoji');
+      const textEl = document.getElementById('gameover-text');
+      const subEl = document.getElementById('gameover-sub');
+      const revealYours = document.getElementById('reveal-yours');
+      const revealOpponent = document.getElementById('reveal-opponent');
+      const playAgainStatus = document.getElementById('play-again-status');
+
+      if (iWon) {
+        emojiEl.textContent = '🏆';
+        textEl.textContent = 'You Win!';
+        textEl.className = 'winner-text win';
+        subEl.textContent = `You guessed ${winningGuess} correctly in ${turnCount} turns.`;
+        opponentNumber = winningGuess;
+      } else {
+        emojiEl.textContent = '😔';
+        textEl.textContent = 'You Lose';
+        textEl.className = 'winner-text lose';
+        subEl.textContent = `Opponent guessed ${winningGuess} (your number) in ${turnCount} turns.`;
+        opponentNumber = null;
+      }
+
+      conn.send({ type: 'reveal', number: myNumber });
+
+      revealYours.textContent = myNumber;
+      revealOpponent.textContent = opponentNumber != null ? opponentNumber : '?';
+      playAgainStatus.textContent = '';
+
+      showScreen('gameover');
+    }
+
+    // --- Play Again ---
+    let playAgainSent = false;
+    let playAgainReceived = false;
+
+    function requestPlayAgain() {
+      playAgainSent = true;
+      conn.send({ type: 'playAgain' });
+      document.getElementById('play-again-status').textContent = 'Waiting for opponent…';
+
+      if (playAgainReceived) {
+        startNewRound();
+      }
+    }
+
+    function handlePlayAgainRequest() {
+      playAgainReceived = true;
+
+      if (playAgainSent) {
+        startNewRound();
+      } else {
+        document.getElementById('play-again-status').textContent = 'Opponent wants to play again!';
+      }
+    }
+
+    function startNewRound() {
+      playAgainSent = false;
+      playAgainReceived = false;
+      myNumber = null;
+      myNumberLocked = false;
+      opponentNumberLocked = false;
+      opponentNumber = null;
+
+      document.getElementById('btn-lock').disabled = false;
+      document.getElementById('btn-lock').textContent = 'Lock Number';
+      document.getElementById('number-slider').disabled = false;
+      document.getElementById('number-slider').value = 50;
+      document.getElementById('picked-number').textContent = '50';
+      document.getElementById('self-check').textContent = '…';
+      document.getElementById('self-check').className = 'check pending';
+      document.getElementById('opponent-check').textContent = '…';
+      document.getElementById('opponent-check').className = 'check pending';
+
+      showScreen('setup');
+      showToast('New round — pick your number!');
+    }
+
+    function leaveGame() {
+      if (conn) conn.close();
+      if (peer) peer.destroy();
+      resetState();
+      showScreen('lobby');
+      resetLobbyUI();
+    }
+
+    function resetState() {
+      peer = null;
+      conn = null;
+      myNumber = null;
+      myNumberLocked = false;
+      opponentNumberLocked = false;
+      opponentNumber = null;
+      isMyTurn = false;
+      turnCount = 0;
+      guessHistory = [];
+      knownLow = MIN;
+      knownHigh = MAX;
+      playAgainSent = false;
+      playAgainReceived = false;
+    }
+
+    document.getElementById('guess-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') submitGuess();
+    });
+
+    document.getElementById('join-id-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') joinGame();
+    });
+  </script>
+</body>
+</html>
