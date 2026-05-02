@@ -1,23 +1,97 @@
+/* --- Game: Top Bar (merged score + secret) --- */
+.game-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid var(--border);
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.top-bar-score {
+  font-weight: 800;
+  font-size: 0.9rem;
+}
+
+.top-bar-secret {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.top-bar-secret .secret-val {
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: var(--accent2);
+  min-width: 28px;
+  text-align: center;
+  letter-spacing: 1px;
+}
+
+.top-bar-secret .btn-toggle-secret {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.top-bar-secret .btn-toggle-secret:hover {
+  border-color: var(--accent2);
+  color: var(--text);
+}
+
+/* --- Game: Turn Block --- */
+.turn-block {
+  margin-bottom: 16px;
+}
+
+.turn-block .turn-indicator {
+  margin-bottom: 8px;
+}
+
+.turn-block .timer-bar-container {
+  margin-bottom: 0;
+}
+
 /* --- Game: Turn Indicator --- */
 .turn-indicator {
   text-align: center;
   padding: 12px;
   border-radius: 8px;
   font-weight: 700;
-  margin-bottom: 16px;
-  font-size: 0.95rem;
+  font-size: 1.1rem;
+  transition: all 0.25s ease;
+}
+
+.turn-indicator.slide-in-left {
+  animation: slideInFromLeft 0.25s ease;
+}
+
+.turn-indicator.slide-in-right {
+  animation: slideInFromRight 0.25s ease;
 }
 
 .turn-yours {
-  background: rgba(16, 185, 129, 0.12);
+  background: rgba(52, 211, 153, 0.12);
   color: var(--accent2);
-  border: 1px solid rgba(16, 185, 129, 0.25);
+  border: 1px solid rgba(52, 211, 153, 0.25);
 }
 
 .turn-theirs {
-  background: rgba(124, 58, 237, 0.12);
+  background: rgba(139, 92, 246, 0.12);
   color: var(--accent);
-  border: 1px solid rgba(124, 58, 237, 0.25);
+  border: 1px solid rgba(139, 92, 246, 0.25);
 }
 
 /* --- Game: Turn Timer --- */
@@ -28,6 +102,11 @@
   border-radius: 12px;
   margin-bottom: 16px;
   overflow: hidden;
+  transition: box-shadow 0.3s;
+}
+
+.timer-bar-container.urgent {
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
 }
 
 .timer-bar-fill {
@@ -41,7 +120,8 @@
 }
 
 .timer-bar-fill.urgent {
-  background: linear-gradient(90deg, var(--danger), #f97316);
+  background: linear-gradient(90deg, var(--danger), var(--warning));
+  animation: timerPulse 0.5s ease-in-out infinite;
 }
 
 .timer-text {
@@ -57,6 +137,11 @@
   font-weight: 700;
   color: #fff;
   text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+/* --- Game: Action Card --- */
+.action-card {
+  border-color: rgba(139, 92, 246, 0.2);
 }
 
 /* --- Game: Range Display --- */
@@ -102,11 +187,11 @@
 }
 
 .range-bar-fill.narrow {
-  background: linear-gradient(90deg, #eab308, #f97316);
+  background: linear-gradient(90deg, #eab308, var(--warning));
 }
 
 .range-bar-fill.very-narrow {
-  background: linear-gradient(90deg, var(--danger), #f97316);
+  background: linear-gradient(90deg, var(--danger), var(--warning));
   animation: rangePulse 1s infinite;
 }
 
@@ -128,7 +213,10 @@
 
 /* --- Game: Guess Input --- */
 .guess-input-row { display: flex; gap: 8px; margin-bottom: 8px; }
-.guess-input-row input { flex: 1; }
+.guess-input-row input {
+  flex: 1;
+  font-size: 1.25rem;
+}
 
 .guess-count-label {
   font-size: 0.8rem;
@@ -139,13 +227,44 @@
 
 .guess-count-label.warn { color: var(--danger); font-weight: 600; }
 
-/* --- Game: History --- */
+/* --- Game: History Tabs --- */
+.history-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.history-tab {
+  flex: 1;
+  padding: 8px 0;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.history-tab.active {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.history-tab:first-child.active {
+  background: rgba(52, 211, 153, 0.15);
+  border-color: var(--accent2);
+}
+
+/* --- Game: History List --- */
 .history {
-  max-height: 280px;
+  max-height: 220px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   padding-right: 4px;
 }
 
@@ -156,37 +275,14 @@
 .history-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: 8px;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
   font-size: 0.85rem;
   animation: fadeIn 0.2s ease;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
 }
-
-.history-item.you {
-  background: rgba(16, 185, 129, 0.08);
-  border: 1px solid rgba(16, 185, 129, 0.15);
-}
-
-.history-item.opponent {
-  background: rgba(124, 58, 237, 0.08);
-  border: 1px solid rgba(124, 58, 237, 0.15);
-}
-
-.history-item .turn-num {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.7rem;
-  font-weight: 700;
-  flex-shrink: 0;
-}
-
-.history-item.you .turn-num { background: rgba(16, 185, 129, 0.2); color: var(--accent2); }
-.history-item.opponent .turn-num { background: rgba(124, 58, 237, 0.2); color: var(--accent); }
 
 .history-item .guess-val { font-weight: 700; font-size: 1rem; min-width: 28px; }
 
@@ -202,4 +298,149 @@
 
 .result-higher { background: rgba(234, 179, 8, 0.15); color: #eab308; }
 .result-lower { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
-.result-correct { background: rgba(16, 185, 129, 0.2); color: var(--accent2); }
+.result-correct { background: rgba(52, 211, 153, 0.2); color: var(--accent2); }
+
+/* --- Game: Opponent Range --- */
+.opponent-range-title { color: var(--accent); }
+
+.opponent-range .range-val {
+  font-size: 1.1rem;
+  color: var(--text-dim);
+}
+
+.opp-bar {
+  background: linear-gradient(90deg, var(--accent), #a78bfa) !important;
+}
+
+.opp-bar.narrow {
+  background: linear-gradient(90deg, #eab308, var(--warning)) !important;
+}
+
+.opp-bar.very-narrow {
+  background: linear-gradient(90deg, var(--danger), var(--warning)) !important;
+  animation: rangePulse 1s infinite;
+}
+
+/* --- Game: Guess Reveal Overlay --- */
+.guess-reveal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  z-index: 150;
+  align-items: center;
+  justify-content: center;
+}
+
+.guess-reveal-overlay.show { display: flex; }
+
+.guess-reveal-content {
+  text-align: center;
+  animation: revealPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.guess-reveal-label {
+  font-size: 1rem;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+
+.guess-reveal-number {
+  font-size: 4rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.1;
+}
+
+.guess-reveal-flavor {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-top: 12px;
+  min-height: 1.4em;
+}
+
+.guess-reveal-flavor.flavor-cold { color: #3b82f6; }
+.guess-reveal-flavor.flavor-warm { color: #eab308; }
+.guess-reveal-flavor.flavor-hot { color: var(--warning); }
+.guess-reveal-flavor.flavor-fire { color: var(--danger); }
+
+@keyframes revealPop {
+  0% { opacity: 0; transform: scale(0.5); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* --- Game: Manual Feedback Overlay --- */
+.feedback-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 160;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  animation: fadeIn 0.25s ease;
+}
+
+.feedback-overlay.show { display: flex; }
+
+.feedback-modal {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  max-width: 360px;
+  width: 100%;
+  text-align: center;
+  animation: revealPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.feedback-prompt {
+  margin-bottom: 14px;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.feedback-prompt span:first-child { font-weight: 700; font-size: 1rem; }
+
+.feedback-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.feedback-btn {
+  flex: 1;
+  padding: 10px 8px;
+  font-size: 0.85rem;
+  border-radius: 8px;
+  font-weight: 700;
+}
+
+.fb-higher { background: rgba(234, 179, 8, 0.2); color: #eab308; border: 1px solid rgba(234, 179, 8, 0.3); }
+.fb-lower { background: rgba(59, 130, 246, 0.2); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.3); }
+.fb-correct { background: rgba(52, 211, 153, 0.2); color: var(--accent2); border: 1px solid rgba(52, 211, 153, 0.3); }
+
+.fb-higher:hover { background: rgba(234, 179, 8, 0.35); }
+.fb-lower:hover { background: rgba(59, 130, 246, 0.35); }
+.fb-correct:hover { background: rgba(52, 211, 153, 0.35); }
+
+.feedback-error {
+  color: var(--danger);
+  font-size: 0.8rem;
+  margin-top: 8px;
+  min-height: 1.2em;
+}
+
+/* --- Mobile keyboard handling --- */
+@supports (height: 1dvh) {
+  .guess-input-row {
+    scroll-margin-bottom: 120px;
+  }
+}

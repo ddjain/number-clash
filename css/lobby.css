@@ -1,3 +1,20 @@
+/* --- Title Row --- */
+.title-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.title-row h1 { margin-bottom: 0; }
+
+.btn-how-to-play {
+  display: inline-flex;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
 /* --- Difficulty Selector --- */
 .difficulty-row {
   display: flex;
@@ -8,6 +25,7 @@
 .btn-diff {
   flex: 1;
   padding: 10px 6px 8px;
+  min-height: 48px;
   font-size: 0.8rem;
   font-weight: 700;
   background: var(--bg);
@@ -31,14 +49,9 @@
 
 .btn-diff:hover { border-color: var(--accent); color: var(--text); }
 .btn-diff.active {
-  background: rgba(124, 58, 237, 0.15);
+  background: rgba(139, 92, 246, 0.15);
   border-color: var(--accent);
   color: var(--accent);
-}
-
-.btn-how-to-play {
-  display: block;
-  margin: 0 auto 20px;
 }
 
 .btn-whatsapp {
@@ -79,6 +92,7 @@
   align-items: center;
   gap: 8px;
   margin-top: 12px;
+  flex-wrap: wrap;
 }
 
 .game-id-display code {
@@ -93,6 +107,27 @@
   color: var(--accent2);
   text-align: center;
   letter-spacing: 4px;
+  min-width: 0;
+}
+
+.game-id-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 400px) {
+  .game-id-display {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .game-id-display code {
+    width: 100%;
+  }
+  .game-id-actions {
+    justify-content: center;
+    width: 100%;
+  }
 }
 
 .join-row { display: flex; gap: 8px; margin-top: 8px; }
@@ -128,6 +163,29 @@
 
 .connection-status { text-align: center; margin-bottom: 12px; }
 
+/* --- Stats Collapse --- */
+.stats-summary-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.stats-summary-bar:hover { color: var(--accent); }
+.stats-summary-bar .arrow { transition: transform 0.2s; font-size: 0.7rem; margin-left: auto; color: var(--text-dim); }
+.stats-summary-bar.open .arrow { transform: rotate(180deg); }
+
+.stats-expandable { display: none; margin-top: 16px; }
+.stats-expandable.open { display: block; }
+
 /* --- Setup: Number Picker --- */
 .number-picker { text-align: center; padding: 16px 0; }
 
@@ -162,6 +220,7 @@ input[type="range"]::-webkit-slider-thumb {
   background: linear-gradient(135deg, var(--accent), var(--accent2));
   cursor: pointer;
   border: 2px solid var(--bg);
+  transition: transform 0.15s;
 }
 
 input[type="range"]::-moz-range-thumb {
@@ -171,6 +230,26 @@ input[type="range"]::-moz-range-thumb {
   background: linear-gradient(135deg, var(--accent), var(--accent2));
   cursor: pointer;
   border: 2px solid var(--bg);
+  transition: transform 0.15s;
+}
+
+input[type="range"]:active::-webkit-slider-thumb {
+  transform: scale(1.2);
+}
+
+input[type="range"]:active::-moz-range-thumb {
+  transform: scale(1.2);
+}
+
+@media (pointer: coarse) {
+  input[type="range"]::-webkit-slider-thumb {
+    width: 28px;
+    height: 28px;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 28px;
+    height: 28px;
+  }
 }
 
 /* --- Setup: Player Status --- */
@@ -196,59 +275,18 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .check.pending { background: rgba(148, 163, 184, 0.15); color: var(--text-dim); }
-.check.done { background: rgba(16, 185, 129, 0.2); color: var(--accent2); }
+.check.done { background: rgba(52, 211, 153, 0.2); color: var(--accent2); }
 
-/* --- Session Score --- */
+/* --- Session Score (gameover only) --- */
 .session-score {
   text-align: center;
   padding: 8px 16px;
   border-radius: 8px;
-  background: rgba(124, 58, 237, 0.08);
-  border: 1px solid rgba(124, 58, 237, 0.15);
+  background: rgba(139, 92, 246, 0.08);
+  border: 1px solid rgba(139, 92, 246, 0.15);
   font-size: 0.85rem;
   margin-bottom: 12px;
   display: none;
 }
 
 .session-score .score-nums { font-weight: 800; font-size: 1.1rem; margin-top: 2px; }
-
-/* --- Secret Number Badge --- */
-.secret-badge {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-radius: 8px;
-  background: rgba(16, 185, 129, 0.08);
-  border: 1px solid rgba(16, 185, 129, 0.2);
-  margin-bottom: 12px;
-  font-size: 0.85rem;
-  color: var(--text-dim);
-}
-
-.secret-badge .secret-val {
-  font-weight: 800;
-  font-size: 1.1rem;
-  color: var(--accent2);
-  min-width: 28px;
-  text-align: center;
-  letter-spacing: 1px;
-}
-
-.secret-badge .btn-toggle-secret {
-  background: none;
-  border: 1px solid var(--border);
-  color: var(--text-dim);
-  padding: 3px 8px;
-  border-radius: 6px;
-  font-size: 0.7rem;
-  cursor: pointer;
-  font-weight: 600;
-  transition: border-color 0.2s;
-}
-
-.secret-badge .btn-toggle-secret:hover {
-  border-color: var(--accent2);
-  color: var(--text);
-}

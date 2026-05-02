@@ -1,10 +1,11 @@
-const DIFFICULTIES = {
-  easy:   { max: 50,  maxGuesses: 8,  label: 'Easy (1-50)' },
-  medium: { max: 100, maxGuesses: 8,  label: 'Medium (1-100)' },
-  hard:   { max: 500, maxGuesses: 12, label: 'Hard (1-500)' }
-};
+const DIFFICULTIES = CONFIG.difficulties;
 
-let gameConfig = { difficulty: 'medium', max: 100, maxGuesses: 8, limitGuesses: true };
+let gameConfig = {
+  difficulty: CONFIG.game.defaultDifficulty,
+  max: DIFFICULTIES[CONFIG.game.defaultDifficulty].max,
+  maxGuesses: DIFFICULTIES[CONFIG.game.defaultDifficulty].maxGuesses,
+  limitGuesses: CONFIG.game.defaultLimitGuesses
+};
 
 function setDifficulty(mode) {
   const d = DIFFICULTIES[mode];
@@ -19,20 +20,11 @@ function toggleGuessLimit(enabled) {
   gameConfig.limitGuesses = enabled;
 }
 
-const ADJ = [
-  'Swift','Bold','Calm','Dark','Eager','Fierce','Grand','Hazy',
-  'Iron','Jade','Keen','Lone','Misty','Noble','Prime','Quick',
-  'Rapid','Sly','True','Vivid'
-];
-const NOUN = [
-  'Falcon','Tiger','Raven','Wolf','Cobra','Eagle','Shark','Lynx',
-  'Hawk','Viper','Fox','Bear','Crane','Drake','Storm','Flame',
-  'Frost','Ridge','Blaze','Thorn'
-];
-
 function randomName() {
-  const a = ADJ[Math.floor(Math.random() * ADJ.length)];
-  const n = NOUN[Math.floor(Math.random() * NOUN.length)];
+  const adj = CONFIG.names.adjectives;
+  const noun = CONFIG.names.nouns;
+  const a = adj[Math.floor(Math.random() * adj.length)];
+  const n = noun[Math.floor(Math.random() * noun.length)];
   return a + ' ' + n;
 }
 
@@ -40,7 +32,7 @@ function resolveMyName() {
   const input = document.getElementById('player-name-input');
   const raw = input.value.trim();
   myName = raw || randomName();
-  localStorage.setItem('nc_playerName', raw);
+  localStorage.setItem(CONFIG.storage.playerNameKey, raw);
   return myName;
 }
 
@@ -59,7 +51,7 @@ function showToast(msg) {
   const el = document.getElementById('toast');
   el.textContent = msg;
   el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 2500);
+  setTimeout(() => el.classList.remove('show'), CONFIG.timing.toastDuration);
 }
 
 function showRules() {
@@ -68,11 +60,31 @@ function showRules() {
 
 function hideRules() {
   document.getElementById('rules-overlay').classList.remove('open');
-  localStorage.setItem('nc_rulesShown', '1');
+  localStorage.setItem(CONFIG.storage.rulesShownKey, '1');
 }
 
 function checkFirstLaunch() {
-  if (!localStorage.getItem('nc_rulesShown')) {
+  if (!localStorage.getItem(CONFIG.storage.rulesShownKey)) {
     showRules();
+  }
+}
+
+function toggleStatsExpand() {
+  const bar = document.getElementById('stats-summary-bar');
+  const content = document.getElementById('stats-content');
+  bar.classList.toggle('open');
+  content.classList.toggle('open');
+}
+
+function updateStatsSummary() {
+  const history = getHistory();
+  const el = document.getElementById('stats-summary-text');
+  if (!el) return;
+  if (history.length === 0) {
+    el.textContent = 'No games yet';
+  } else {
+    const wins = history.filter(g => g.won).length;
+    const rate = Math.round((wins / history.length) * 100);
+    el.textContent = history.length + ' games · ' + rate + '% wins';
   }
 }

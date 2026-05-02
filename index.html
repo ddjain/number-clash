@@ -9,15 +9,19 @@
   <link rel="stylesheet" href="css/game.css" />
   <link rel="stylesheet" href="css/gameover.css" />
   <link rel="stylesheet" href="css/stats.css" />
+  <link rel="stylesheet" href="css/social.css" />
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 </head>
 <body>
 
   <!-- LOBBY SCREEN -->
   <div id="screen-lobby" class="screen active">
-    <h1>Number Clash</h1>
+    <div class="title-row">
+      <h1>Number Clash</h1>
+      <button class="btn btn-outline btn-sm btn-how-to-play" onclick="showRules()">&#9889; How to Play</button>
+    </div>
     <p class="subtitle">Pick. Guess. Clash. First to crack it wins.</p>
-    <button class="btn btn-outline btn-sm btn-how-to-play" onclick="showRules()">&#9889; How to Play</button>
 
     <div class="card">
       <div class="card-title">
@@ -51,9 +55,11 @@
       </button>
       <div id="game-id-box" class="game-id-display" style="display:none;">
         <code id="game-id-text"></code>
-        <button class="btn btn-outline btn-sm" onclick="copyGameId()">Copy</button>
-        <button class="btn btn-sm btn-whatsapp" onclick="shareWhatsApp()">WhatsApp</button>
-        <button class="btn btn-outline btn-sm" onclick="shareGame()">Share</button>
+        <div class="game-id-actions">
+          <button class="btn btn-outline btn-sm" id="btn-copy" onclick="copyGameId()">Copy</button>
+          <button class="btn btn-sm btn-whatsapp" onclick="shareWhatsApp()">WhatsApp</button>
+          <button class="btn btn-outline btn-sm" onclick="shareGame()">Share</button>
+        </div>
       </div>
       <div id="create-status" class="connection-status" style="display:none;margin-top:12px;">
         <span class="status-badge status-waiting"><span class="dot"></span> Waiting for opponent&hellip;</span>
@@ -74,11 +80,12 @@
     </div>
 
     <div class="card" id="stats-card">
-      <div class="card-title">
+      <button class="stats-summary-bar" id="stats-summary-bar" onclick="toggleStatsExpand()">
         <span class="icon icon-stats">&#9733;</span>
-        Your Stats
-      </div>
-      <div id="stats-content"></div>
+        <span id="stats-summary-text">No games yet</span>
+        <span class="arrow">&#9660;</span>
+      </button>
+      <div id="stats-content" class="stats-expandable"></div>
     </div>
   </div>
 
@@ -121,24 +128,26 @@
   <div id="screen-game" class="screen">
     <h1>Number Clash</h1>
 
-    <div id="session-score-game" class="session-score">
-      <div style="color:var(--text-dim);font-size:0.75rem;">Session Score</div>
-      <div class="score-nums"><span id="score-game-text"></span></div>
+    <div class="game-top-bar" id="game-top-bar">
+      <div class="top-bar-score" id="top-bar-score" style="display:none;">
+        <span id="score-game-text"></span>
+      </div>
+      <div class="top-bar-secret">
+        <span>Your secret:</span>
+        <span id="secret-display" class="secret-val"></span>
+        <button class="btn-toggle-secret" id="btn-toggle-secret" onclick="toggleSecret()">Hide</button>
+      </div>
     </div>
 
-    <div class="secret-badge">
-      <span>Your secret:</span>
-      <span id="secret-display" class="secret-val"></span>
-      <button class="btn-toggle-secret" id="btn-toggle-secret" onclick="toggleSecret()">Hide</button>
+    <div class="turn-block">
+      <div id="turn-indicator" class="turn-indicator turn-yours">Your move &mdash; take a shot!</div>
+      <div class="timer-bar-container" id="timer-bar-container">
+        <div class="timer-bar-fill" id="timer-bar-fill"></div>
+        <span class="timer-text" id="timer-text"></span>
+      </div>
     </div>
 
-    <div id="turn-indicator" class="turn-indicator turn-yours">Your move &mdash; take a shot!</div>
-    <div class="timer-bar-container" id="timer-bar-container">
-      <div class="timer-bar-fill" id="timer-bar-fill"></div>
-      <span class="timer-text" id="timer-text"></span>
-    </div>
-
-    <div class="card">
+    <div class="card action-card">
       <div class="card-title">Your Guessing Range</div>
       <div class="range-display">
         <span id="range-low" class="range-val">1</span>
@@ -151,7 +160,7 @@
         <span id="range-high" class="range-val">100</span>
       </div>
       <div class="guess-input-row">
-        <input type="number" id="guess-input" min="1" max="100" placeholder="Enter guess" />
+        <input type="number" id="guess-input" min="1" max="100" placeholder="Enter guess" inputmode="numeric" pattern="[0-9]*" />
         <button id="btn-guess" class="btn btn-accent" onclick="submitGuess()">Guess</button>
       </div>
       <p id="guess-count-label" class="guess-count-label"></p>
@@ -159,8 +168,64 @@
     </div>
 
     <div class="card">
-      <div class="card-title">History</div>
-      <div id="history" class="history"></div>
+      <div class="history-tabs">
+        <button class="history-tab active" id="tab-you" onclick="switchHistoryTab('you')">You (0)</button>
+        <button class="history-tab" id="tab-them" onclick="switchHistoryTab('them')">Them (0)</button>
+      </div>
+      <div id="history-you" class="history"></div>
+      <div id="history-them" class="history" style="display:none;"></div>
+    </div>
+
+    <!-- Opponent Range -->
+    <div class="card" id="opponent-range-card">
+      <div class="card-title opponent-range-title"><span id="opponent-range-name">Opponent</span>'s Range</div>
+      <div class="range-display opponent-range">
+        <span id="opp-range-low" class="range-val">1</span>
+        <div class="range-bar-outer">
+          <div class="range-bar-track">
+            <div id="opp-range-bar-fill" class="range-bar-fill opp-bar" style="left:0%;width:100%;"></div>
+          </div>
+          <div class="range-info" id="opp-range-info">100 numbers left</div>
+        </div>
+        <span id="opp-range-high" class="range-val">100</span>
+      </div>
+    </div>
+
+    <!-- Social Bar -->
+    <div class="social-bar">
+      <div class="reaction-tray" id="reaction-tray"></div>
+      <button class="btn-chat-toggle" onclick="toggleChatPicker()">💬</button>
+    </div>
+    <div id="chat-picker" class="chat-picker"></div>
+
+    <!-- Floating Reactions + Chat Bubble -->
+    <div id="reaction-stage" class="reaction-stage"></div>
+    <div id="chat-bubble" class="chat-bubble"></div>
+
+    <!-- Guess Reveal Overlay -->
+    <div id="guess-reveal-overlay" class="guess-reveal-overlay">
+      <div class="guess-reveal-content">
+        <div class="guess-reveal-label" id="guess-reveal-label">Opponent guessed</div>
+        <div class="guess-reveal-number" id="guess-reveal-number">42</div>
+        <div class="guess-reveal-flavor" id="guess-reveal-flavor"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Manual Feedback Overlay (outside game screen so it overlays everything) -->
+  <div id="feedback-panel" class="feedback-overlay">
+    <div class="feedback-modal">
+      <div class="feedback-prompt">
+        <span id="feedback-guess-text"></span>
+        <span id="feedback-secret-text"></span>
+      </div>
+      <div class="feedback-buttons">
+        <button class="btn feedback-btn fb-higher" onclick="sendManualFeedback('higher')">&#8593; Higher</button>
+        <button class="btn feedback-btn fb-lower" onclick="sendManualFeedback('lower')">&#8595; Lower</button>
+        <button class="btn feedback-btn fb-correct" onclick="sendManualFeedback('correct')">&#10003; Correct!</button>
+      </div>
+      <p id="feedback-error" class="feedback-error"></p>
     </div>
   </div>
 
@@ -174,11 +239,12 @@
     </div>
 
     <div class="card gameover-card" id="gameover-card">
-      <div id="confetti-container" class="confetti-container"></div>
       <div class="trophy" id="gameover-emoji"></div>
       <div id="gameover-text" class="winner-text"></div>
       <p id="gameover-sub" style="color:var(--text-dim);font-size:0.9rem;"></p>
       <p id="gameover-closest" style="color:var(--text-dim);font-size:0.8rem;margin-top:4px;"></p>
+      <p id="gameover-encouragement" class="encouragement-text"></p>
+      <p id="gameover-stat-line" class="stat-line-text"></p>
 
       <div class="reveal">
         <div class="reveal-item">
@@ -191,9 +257,15 @@
         </div>
       </div>
 
-      <div id="auto-rematch-bar" class="auto-rematch-bar">
-        <div id="auto-rematch-fill" class="auto-rematch-fill"></div>
-        <span id="auto-rematch-text" class="auto-rematch-text">Next round in 5s</span>
+      <div class="taunt-row" id="taunt-row"></div>
+      <div id="opponent-taunt" class="opponent-taunt"></div>
+
+      <div class="auto-rematch-row">
+        <div id="auto-rematch-bar" class="auto-rematch-bar">
+          <div id="auto-rematch-fill" class="auto-rematch-fill"></div>
+          <span id="auto-rematch-text" class="auto-rematch-text">Next round in 5s</span>
+        </div>
+        <button class="btn btn-outline btn-sm" id="btn-cancel-rematch" onclick="cancelRematch()">Cancel</button>
       </div>
       <div class="btn-row">
         <button class="btn btn-outline" onclick="leaveGame()">Leave Game</button>
@@ -209,7 +281,7 @@
       <div class="rules-list">
         <div class="rule-item"><span class="rule-icon">1</span><div><strong>Challenge a Friend</strong><br/>Create a game and send the link. One click to join.</div></div>
         <div class="rule-item"><span class="rule-icon">2</span><div><strong>Pick Your Secret</strong><br/>Choose a number and lock it in. No take-backs.</div></div>
-        <div class="rule-item"><span class="rule-icon">3</span><div><strong>Guess &amp; React</strong><br/>Take turns guessing. You'll hear <em>Higher</em>, <em>Lower</em>, or <em>Correct!</em></div></div>
+        <div class="rule-item"><span class="rule-icon">3</span><div><strong>Guess &amp; React</strong><br/>Take turns guessing. Your opponent tells you <em>Higher</em>, <em>Lower</em>, or <em>Correct!</em> &mdash; and you can see their range narrowing in real time.</div></div>
         <div class="rule-item"><span class="rule-icon">4</span><div><strong>Win the Clash</strong><br/>First to crack the code wins! Run out of guesses? Closest guess takes it.</div></div>
       </div>
       <div class="rules-extras">
@@ -224,10 +296,12 @@
 
   <div id="toast" class="toast"></div>
 
+  <script src="js/config.js"></script>
   <script src="js/utils.js"></script>
   <script src="js/audio.js"></script>
   <script src="js/effects.js"></script>
   <script src="js/stats.js"></script>
+  <script src="js/social.js"></script>
   <script src="js/game.js"></script>
 </body>
 </html>

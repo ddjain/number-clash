@@ -55,7 +55,7 @@
   border-radius: 10px;
 }
 
-.recent-item .recent-result.win-tag { background: rgba(16, 185, 129, 0.15); color: var(--accent2); }
+.recent-item .recent-result.win-tag { background: rgba(52, 211, 153, 0.15); color: var(--accent2); }
 .recent-item .recent-result.loss-tag { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
 .recent-item .recent-detail { flex: 1; color: var(--text-dim); }
 .recent-item .recent-turns { color: var(--text-dim); font-size: 0.75rem; }

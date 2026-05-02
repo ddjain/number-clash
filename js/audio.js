@@ -39,3 +39,17 @@ function playNearSound() {
   setTimeout(() => playTone(880, 0.06, 'sine', 0.1), 100);
   setTimeout(() => playTone(880, 0.06, 'sine', 0.1), 200);
 }
+
+function playTurnSwitchSound() {
+  playTone(440, 0.05, 'sine', 0.06);
+  setTimeout(() => playTone(550, 0.05, 'sine', 0.06), 60);
+}
+
+function playTimerUrgentSound() {
+  playTone(800, 0.04, 'square', 0.05);
+}
+
+function playLockSound() {
+  playTone(660, 0.1, 'sine', 0.1);
+  setTimeout(() => playTone(880, 0.15, 'sine', 0.12), 100);
+}

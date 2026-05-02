@@ -1,9 +1,6 @@
-const HISTORY_KEY = 'nc_history';
-const MAX_HISTORY = 50;
-
 function getHistory() {
   try {
-    return JSON.parse(localStorage.getItem(HISTORY_KEY)) || [];
+    return JSON.parse(localStorage.getItem(CONFIG.storage.historyKey)) || [];
   } catch { return []; }
 }
 
@@ -19,11 +16,12 @@ function saveGameRecord(won, oppName, myNum, oppNum, turns) {
     opponentNumber: oppNum,
     turns: turns
   });
-  if (history.length > MAX_HISTORY) history.length = MAX_HISTORY;
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  if (history.length > CONFIG.storage.maxHistory) history.length = CONFIG.storage.maxHistory;
+  localStorage.setItem(CONFIG.storage.historyKey, JSON.stringify(history));
 }
 
 function renderStats() {
+  updateStatsSummary();
   const history = getHistory();
   const container = document.getElementById('stats-content');
 
@@ -52,11 +50,6 @@ function renderStats() {
     if (g.won) { streak++; bestStreak = Math.max(bestStreak, streak); }
     else streak = 0;
   }
-
-  const allTurns = history.filter(g => g.turns > 0);
-  const avgAll = allTurns.length
-    ? Math.round(allTurns.reduce((s, g) => s + g.turns, 0) / allTurns.length * 10) / 10
-    : '-';
 
   const recent = history.slice(0, 10);
   let recentHtml = '';
@@ -101,7 +94,7 @@ function toggleRecent(btn) {
 }
 
 function clearHistory() {
-  localStorage.removeItem(HISTORY_KEY);
+  localStorage.removeItem(CONFIG.storage.historyKey);
   renderStats();
   showToast('History cleared.');
 }

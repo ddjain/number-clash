@@ -1,15 +1,16 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg: #0f0f1a;
-  --card: #1a1a2e;
-  --card-alt: #16213e;
-  --accent: #7c3aed;
-  --accent2: #10b981;
+  --bg: #0f172a;
+  --card: #1e293b;
+  --card-alt: #1e293b;
+  --accent: #8b5cf6;
+  --accent2: #34d399;
   --text: #e2e8f0;
   --text-dim: #94a3b8;
   --danger: #ef4444;
-  --border: #2d2d4a;
+  --warning: #f97316;
+  --border: #334155;
   --radius: 12px;
 }
 
@@ -26,7 +27,7 @@ body {
 }
 
 h1 {
-  font-size: 2rem;
+  font-size: 1.75rem;
   font-weight: 800;
   background: linear-gradient(135deg, var(--accent), var(--accent2));
   -webkit-background-clip: text;
@@ -58,6 +59,36 @@ h1 {
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes slideInFromLeft {
+  from { opacity: 0; transform: translateX(-30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInFromRight {
+  from { opacity: 0; transform: translateX(30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes headShake {
+  0% { transform: translateX(0); }
+  15% { transform: translateX(-6px) rotateZ(-5deg); }
+  30% { transform: translateX(5px) rotateZ(3deg); }
+  45% { transform: translateX(-3px) rotateZ(-3deg); }
+  60% { transform: translateX(2px) rotateZ(2deg); }
+  75% { transform: translateX(-1px) rotateZ(-1deg); }
+  100% { transform: translateX(0); }
+}
+
+@keyframes staggerReveal {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes timerPulse {
+  0%, 100% { transform: scaleX(1); }
+  50% { transform: scaleX(1.01); filter: brightness(1.2); }
+}
+
 /* --- Cards --- */
 .card {
   background: var(--card);
@@ -87,8 +118,8 @@ h1 {
   flex-shrink: 0;
 }
 
-.icon-create { background: rgba(124, 58, 237, 0.2); }
-.icon-join { background: rgba(16, 185, 129, 0.2); }
+.icon-create { background: rgba(139, 92, 246, 0.2); }
+.icon-join { background: rgba(52, 211, 153, 0.2); }
 .icon-stats { background: rgba(234, 179, 8, 0.2); }
 .icon-name { background: rgba(59, 130, 246, 0.2); }
 
@@ -110,10 +141,23 @@ input[type="number"] {
   color: var(--text);
   font-size: 1rem;
   outline: none;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-input:focus { border-color: var(--accent); }
+input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
 
 /* --- Buttons --- */
 .btn {
@@ -127,14 +171,14 @@ input:focus { border-color: var(--accent); }
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.1s, opacity 0.2s;
+  transition: transform 0.1s, opacity 0.2s, box-shadow 0.15s;
   color: #fff;
 }
 
-.btn:active { transform: scale(0.97); }
+.btn:active { transform: scale(0.95); box-shadow: none; }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-.btn-primary { background: linear-gradient(135deg, var(--accent), #6d28d9); }
+.btn-primary { background: linear-gradient(135deg, var(--accent), #7c3aed); }
 .btn-accent { background: linear-gradient(135deg, var(--accent2), #059669); }
 .btn-sm { padding: 6px 12px; font-size: 0.8rem; }
 
@@ -155,6 +199,10 @@ input:focus { border-color: var(--accent); }
 .btn-block { width: 100%; }
 .btn-row { display: flex; gap: 8px; justify-content: center; margin-top: 16px; }
 
+@media (pointer: coarse) {
+  .btn { min-height: 44px; }
+}
+
 /* --- Toast --- */
 .toast {
   position: fixed;
@@ -165,7 +213,7 @@ input:focus { border-color: var(--accent); }
   border: 1px solid var(--border);
   padding: 10px 20px;
   border-radius: 8px;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   opacity: 0;
   transition: transform 0.3s, opacity 0.3s;
   pointer-events: none;
@@ -228,7 +276,7 @@ input:focus { border-color: var(--accent); }
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: rgba(124, 58, 237, 0.15);
+  background: rgba(139, 92, 246, 0.15);
   color: var(--accent);
   display: flex;
   align-items: center;
