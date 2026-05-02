@@ -432,7 +432,6 @@ function startGame() {
   document.getElementById('guess-error').textContent = '';
   document.getElementById('btn-guess').textContent = 'Guess #1';
   document.getElementById('opponent-range-name').textContent = opponentName;
-  document.getElementById('feedback-panel').classList.remove('show');
   document.getElementById('guess-reveal-overlay').classList.remove('show');
   switchHistoryTab('you');
 
@@ -468,11 +467,6 @@ function updateTurnUI() {
   playTurnSwitchSound();
 }
 
-function setFeedbackIndicator() {
-  const indicator = document.getElementById('turn-indicator');
-  indicator.textContent = 'Respond to ' + opponentName + '’s guess!';
-  indicator.className = 'turn-indicator turn-yours';
-}
 
 function startTurnTimer() {
   stopTurnTimer();
@@ -681,36 +675,14 @@ function showGuessReveal(val, dist) {
 
   setTimeout(() => {
     overlay.classList.remove('show');
-    showFeedbackPanel();
+    autoSendFeedback();
   }, CONFIG.timing.guessRevealDelay);
 }
 
-function showFeedbackPanel() {
-  const panel = document.getElementById('feedback-panel');
-  document.getElementById('feedback-guess-text').textContent =
-    opponentName + ' guessed ' + pendingGuessValue;
-  document.getElementById('feedback-secret-text').textContent =
-    'Your secret is ' + myNumber;
-  document.getElementById('feedback-error').textContent = '';
-  panel.classList.add('show');
-
-  setFeedbackIndicator();
-}
-
-function sendManualFeedback(chosen) {
+function autoSendFeedback() {
   if (!awaitingFeedback) return;
 
-  const correctResult = pendingGuessResult;
-  if (chosen !== correctResult) {
-    const hint = correctResult === 'correct' ? 'They got it right!'
-      : 'Your number is ' + myNumber + ', so the answer is ' + correctResult.charAt(0).toUpperCase() + correctResult.slice(1) + '.';
-    document.getElementById('feedback-error').textContent = hint;
-    return;
-  }
-
   awaitingFeedback = false;
-  document.getElementById('feedback-panel').classList.remove('show');
-  stopTurnTimer();
 
   const val = pendingGuessValue;
   const result = pendingGuessResult;
@@ -829,7 +801,6 @@ function addHistoryItem(who, guess, result) {
 function endGame(iWon, winningGuess, tieType) {
   stopTurnTimer();
   awaitingFeedback = false;
-  document.getElementById('feedback-panel').classList.remove('show');
   document.getElementById('guess-reveal-overlay').classList.remove('show');
   const isDraw = tieType === 'draw';
 

@@ -14,7 +14,7 @@ const CONFIG = {
   },
 
   timing: {
-    turnTime: 12,
+    turnTime: 15,
     rematchCountdown: 5,
     toastDuration: 2500,
     guessRevealDelay: 1000,
