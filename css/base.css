@@ -37,6 +37,15 @@ h1 {
   text-align: center;
 }
 
+.nc-logo { flex-shrink: 0; }
+
+.title-row-compact {
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.title-row-compact h1 { margin-bottom: 0; }
+
 .subtitle {
   color: var(--text-dim);
   font-size: 0.9rem;

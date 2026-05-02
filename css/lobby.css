@@ -40,6 +40,8 @@
   gap: 2px;
 }
 
+.diff-icon { flex-shrink: 0; margin-bottom: 2px; }
+
 .diff-detail {
   display: block;
   font-size: 0.6rem;
@@ -251,6 +253,9 @@ input[type="range"]:active::-moz-range-thumb {
     height: 28px;
   }
 }
+
+/* --- Player Avatars --- */
+.player-avatar { flex-shrink: 0; border-radius: 50%; }
 
 /* --- Setup: Player Status --- */
 .setup-status { display: flex; justify-content: center; gap: 24px; margin-top: 16px; }

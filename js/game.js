@@ -48,6 +48,27 @@ let myHistoryCount = 0;
 let opponentHistoryCount = 0;
 let activeHistoryTab = 'you';
 
+let gameCode = '';
+let firstTurn = true;
+let peerTimeoutId = null;
+
+const AVATARS = ['fox', 'wolf', 'cobra', 'cat', 'bear'];
+let myAvatar = '';
+let opponentAvatar = '';
+
+// ===== Avatars =====
+function pickAvatar(exclude) {
+  const pool = AVATARS.filter(a => a !== exclude);
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function setAvatar(el, name) {
+  if (!el) return;
+  if (el.tagName === 'IMG') {
+    el.src = 'img/' + name + '.svg';
+  }
+}
+
 // ===== Secret Number Display =====
 function showSecretNumber() {
   const display = document.getElementById('secret-display');
@@ -93,17 +114,28 @@ function generateGameCode() {
 // ===== Lobby: Create Game =====
 function createGame() {
   resolveMyName();
+  if (peer) peer.destroy();
 
   const btn = document.getElementById('btn-create');
   btn.disabled = true;
   btn.textContent = 'Connecting…';
 
   const prefix = CONFIG.game.codePrefix;
-  const gameCode = generateGameCode();
+  gameCode = generateGameCode();
   peer = new Peer(prefix + gameCode);
   isCreator = true;
 
+  peerTimeoutId = setTimeout(() => {
+    if (peer && !peer.open) {
+      peer.destroy();
+      btn.disabled = false;
+      btn.textContent = 'Generate Game ID';
+      showToast('Connection timed out. Try again.');
+    }
+  }, CONFIG.connection.peerTimeout);
+
   peer.on('open', () => {
+    if (peerTimeoutId) { clearTimeout(peerTimeoutId); peerTimeoutId = null; }
     document.getElementById('game-id-text').textContent = gameCode;
     document.getElementById('game-id-box').style.display = 'flex';
     document.getElementById('create-status').style.display = 'block';
@@ -117,7 +149,9 @@ function createGame() {
 
   peer.on('error', err => {
     if (err.type === 'unavailable-id') {
-      const retryCode = generateGameCode();
+      peer.destroy();
+      gameCode = generateGameCode();
+      const retryCode = gameCode;
       peer = new Peer(prefix + retryCode);
       peer.on('open', () => {
         document.getElementById('game-id-text').textContent = retryCode;
@@ -186,6 +220,7 @@ function shareGame() {
 // ===== Lobby: Join Game =====
 function joinGame() {
   resolveMyName();
+  if (peer) peer.destroy();
 
   const input = document.getElementById('join-id-input');
   const errorEl = document.getElementById('join-error');
@@ -197,6 +232,7 @@ function joinGame() {
   }
 
   const code = rawId.replace(/^NC-/i, '');
+  gameCode = code;
   const peerId = CONFIG.game.codePrefix + code;
 
   errorEl.textContent = '';
@@ -207,7 +243,17 @@ function joinGame() {
   peer = new Peer();
   isCreator = false;
 
+  peerTimeoutId = setTimeout(() => {
+    if (peer && !peer.open) {
+      peer.destroy();
+      errorEl.textContent = 'Connection timed out. Try again.';
+      btn.disabled = false;
+      btn.textContent = 'Join';
+    }
+  }, CONFIG.connection.peerTimeout);
+
   peer.on('open', () => {
+    if (peerTimeoutId) { clearTimeout(peerTimeoutId); peerTimeoutId = null; }
     conn = peer.connect(peerId, { reliable: true });
     conn.on('open', () => setupConnection());
     conn.on('error', () => {
@@ -228,20 +274,76 @@ function joinGame() {
   });
 }
 
+// ===== Session Persistence =====
+let reconnectTimerId = null;
+let reconnectRetryId = null;
+let isReconnecting = false;
+
+function currentPhase() {
+  if (document.getElementById('screen-setup').classList.contains('active')) return 'setup';
+  if (document.getElementById('screen-game').classList.contains('active')) return 'playing';
+  if (document.getElementById('screen-gameover').classList.contains('active')) return 'gameover';
+  return 'lobby';
+}
+
+function saveSession() {
+  sessionStorage.setItem('nc_session', JSON.stringify({
+    gameCode, isCreator, myName, myAvatar, opponentName, opponentAvatar,
+    myNumber, myNumberLocked, gameConfig,
+    sessionMyWins, sessionOpponentWins, sessionRounds,
+    knownLow, knownHigh, opponentKnownLow, opponentKnownHigh,
+    myGuessCount, isMyTurn,
+    phase: currentPhase()
+  }));
+}
+
+function clearSession() {
+  sessionStorage.removeItem('nc_session');
+}
+
+function getSession() {
+  try { return JSON.parse(sessionStorage.getItem('nc_session')); }
+  catch { return null; }
+}
+
+function showReconnectOverlay(msg) {
+  const overlay = document.getElementById('reconnect-overlay');
+  document.getElementById('reconnect-text').textContent = msg || 'Reconnecting…';
+  overlay.classList.add('show');
+}
+
+function hideReconnectOverlay() {
+  document.getElementById('reconnect-overlay').classList.remove('show');
+}
+
 // ===== Connection Setup =====
-function setupConnection() {
+function setupConnection(isRejoin) {
   conn.on('data', handleMessage);
   conn.on('close', handleDisconnect);
   conn.on('error', () => handleDisconnect());
 
-  conn.send({ type: 'hello', name: myName, config: isCreator ? gameConfig : undefined });
+  if (!isRejoin) {
+    myAvatar = pickAvatar('');
+    const msgData = { type: 'hello', name: myName, avatar: myAvatar };
+    if (isCreator) {
+      const assignedOpponent = pickAvatar(myAvatar);
+      msgData.config = gameConfig;
+      msgData.assignedAvatar = assignedOpponent;
+    }
+    conn.send(msgData);
 
-  showScreen('setup');
-  applyConfigToSetup();
-  document.getElementById('setup-self-name').textContent = myName;
-  document.getElementById('setup-opponent-name').textContent = 'Waiting…';
+    showScreen('setup');
+    applyConfigToSetup();
+    document.getElementById('setup-self-name').textContent = myName;
+    document.getElementById('setup-opponent-name').textContent = 'Waiting…';
+    setAvatar(document.getElementById('avatar-self'), myAvatar);
+    showToast('Connected! Waiting for introductions…');
+  } else {
+    conn.send({ type: 'rejoin', name: myName, avatar: myAvatar });
+    showToast('Reconnected!');
+  }
 
-  showToast('Connected! Waiting for introductions…');
+  saveSession();
 }
 
 function applyConfigToSetup() {
@@ -266,11 +368,62 @@ function applyConfigToSetup() {
 }
 
 function handleDisconnect() {
-  showToast('Opponent disconnected.');
+  stopTurnTimer();
+  conn = null;
+  const session = getSession();
+  if (session && session.phase !== 'lobby' && peer && !peer.destroyed) {
+    showReconnectOverlay('Opponent disconnected. Waiting…');
+    if (isCreator) {
+      peer.on('connection', incoming => {
+        conn = incoming;
+        conn.on('open', () => handleReconnectedPeer());
+      });
+    } else {
+      const creatorPeerId = CONFIG.game.codePrefix + gameCode;
+      reconnectRetryId = setInterval(() => {
+        if (!peer || peer.destroyed || conn) {
+          clearInterval(reconnectRetryId);
+          reconnectRetryId = null;
+          return;
+        }
+        const attempt = peer.connect(creatorPeerId, { reliable: true });
+        attempt.on('open', () => {
+          if (conn) { attempt.close(); return; }
+          conn = attempt;
+          handleReconnectedPeer();
+        });
+        attempt.on('error', () => {});
+      }, CONFIG.connection.reconnectRetryInterval);
+    }
+    reconnectTimerId = setTimeout(() => {
+      hideReconnectOverlay();
+      showToast('Opponent did not reconnect.');
+      cleanupAndLobby();
+    }, CONFIG.connection.reconnectWait);
+    return;
+  }
+  cleanupAndLobby();
+}
+
+function cleanupAndLobby() {
+  clearSession();
+  if (reconnectTimerId) { clearTimeout(reconnectTimerId); reconnectTimerId = null; }
+  if (reconnectRetryId) { clearInterval(reconnectRetryId); reconnectRetryId = null; }
+  isReconnecting = false;
   resetState();
   showScreen('lobby');
   resetLobbyUI();
   renderStats();
+}
+
+function handleReconnectedPeer() {
+  if (reconnectTimerId) { clearTimeout(reconnectTimerId); reconnectTimerId = null; }
+  if (reconnectRetryId) { clearInterval(reconnectRetryId); reconnectRetryId = null; }
+  conn.on('data', handleMessage);
+  conn.on('close', handleDisconnect);
+  conn.on('error', () => handleDisconnect());
+  isReconnecting = false;
+  saveSession();
 }
 
 function resetLobbyUI() {
@@ -292,7 +445,17 @@ function handleMessage(data) {
   switch (data.type) {
     case 'hello':
       opponentName = data.name || 'Opponent';
+      opponentAvatar = data.avatar || pickAvatar(myAvatar);
+      if (data.assignedAvatar) {
+        myAvatar = data.assignedAvatar;
+        setAvatar(document.getElementById('avatar-self'), myAvatar);
+      }
+      if (opponentAvatar === myAvatar) {
+        myAvatar = pickAvatar(opponentAvatar);
+        setAvatar(document.getElementById('avatar-self'), myAvatar);
+      }
       document.getElementById('setup-opponent-name').textContent = opponentName;
+      setAvatar(document.getElementById('avatar-opponent'), opponentAvatar);
       if (data.config) {
         gameConfig = { ...gameConfig, ...data.config };
         applyConfigToSetup();
@@ -353,6 +516,75 @@ function handleMessage(data) {
     case 'taunt':
       showOpponentTaunt(data.msg);
       break;
+
+    case 'rejoin':
+      opponentName = data.name || opponentName;
+      opponentAvatar = data.avatar || opponentAvatar;
+      hideReconnectOverlay();
+      if (reconnectTimerId) { clearTimeout(reconnectTimerId); reconnectTimerId = null; }
+      conn.send({
+        type: 'rejoinAck',
+        name: myName,
+        avatar: myAvatar,
+        phase: currentPhase(),
+        myNumber: myNumber,
+        isMyTurn: isMyTurn,
+        gameConfig: gameConfig,
+        sessionMyWins: sessionMyWins,
+        sessionOpponentWins: sessionOpponentWins,
+        sessionRounds: sessionRounds,
+        opponentKnownLow: opponentKnownLow,
+        opponentKnownHigh: opponentKnownHigh,
+        knownLow: knownLow,
+        knownHigh: knownHigh
+      });
+      showToast(opponentName + ' reconnected!');
+      saveSession();
+      if (currentPhase() === 'playing') {
+        updateTurnUI();
+      }
+      break;
+
+    case 'rejoinAck':
+      opponentName = data.name || opponentName;
+      opponentAvatar = data.avatar || opponentAvatar;
+      gameConfig = data.gameConfig || gameConfig;
+      sessionMyWins = data.sessionOpponentWins || 0;
+      sessionOpponentWins = data.sessionMyWins || 0;
+      sessionRounds = data.sessionRounds || 0;
+      hideReconnectOverlay();
+      isReconnecting = false;
+      if (data.phase === 'playing') {
+        isMyTurn = !data.isMyTurn;
+        opponentKnownLow = data.knownLow || 1;
+        opponentKnownHigh = data.knownHigh || gameConfig.max;
+        knownLow = data.opponentKnownLow || 1;
+        knownHigh = data.opponentKnownHigh || gameConfig.max;
+        myNumberLocked = true;
+        showScreen('game');
+        showSecretNumber();
+        updateTurnUI();
+        updateRangeUI();
+        updateOpponentRangeUI();
+        updateGuessCountLabel();
+        updateSessionScoreUI();
+        populateReactions();
+        populateChatPicker();
+        document.getElementById('opponent-range-name').textContent = opponentName;
+      } else if (data.phase === 'setup') {
+        showScreen('setup');
+        applyConfigToSetup();
+        document.getElementById('setup-self-name').textContent = myName;
+        document.getElementById('setup-opponent-name').textContent = opponentName;
+        setAvatar(document.getElementById('avatar-self'), myAvatar);
+        setAvatar(document.getElementById('avatar-opponent'), opponentAvatar);
+      } else {
+        showScreen('lobby');
+        clearSession();
+      }
+      showToast('Reconnected to game!');
+      saveSession();
+      break;
   }
 }
 
@@ -379,6 +611,7 @@ function lockNumber() {
 
   playLockSound();
   conn.send({ type: 'numberLocked' });
+  saveSession();
   checkBothLocked();
 }
 
@@ -413,6 +646,7 @@ function startGame() {
   activeHistoryTab = 'you';
 
   secretVisible = true;
+  firstTurn = true;
 
   const gi = document.getElementById('guess-input');
   gi.max = gameConfig.max;
@@ -438,6 +672,7 @@ function startGame() {
   if (isMyTurn) {
     gi.focus();
   }
+  saveSession();
 }
 
 // ===== Turn UI =====
@@ -445,18 +680,22 @@ function updateTurnUI() {
   const indicator = document.getElementById('turn-indicator');
   const guessInput = document.getElementById('guess-input');
   const guessBtn = document.getElementById('btn-guess');
+  const turnTextEl = document.getElementById('turn-indicator-text');
+  const turnAvatarEl = document.getElementById('turn-avatar');
 
   if (isMyTurn) {
     startTurnTimer();
-    indicator.textContent = 'Your move — take a shot!';
+    turnTextEl.textContent = 'Your move — take a shot!';
     indicator.className = 'turn-indicator turn-yours';
+    setAvatar(turnAvatarEl, myAvatar);
     guessInput.disabled = false;
     guessBtn.disabled = false;
     guessInput.focus();
   } else {
     stopTurnTimer();
-    indicator.textContent = opponentName + ' is thinking…';
+    turnTextEl.textContent = opponentName + ' is thinking…';
     indicator.className = 'turn-indicator turn-theirs';
+    setAvatar(turnAvatarEl, opponentAvatar);
     guessInput.disabled = true;
     guessBtn.disabled = true;
   }
@@ -464,7 +703,8 @@ function updateTurnUI() {
   indicator.classList.remove('slide-in-left', 'slide-in-right');
   void indicator.offsetWidth;
   indicator.classList.add(isMyTurn ? 'slide-in-left' : 'slide-in-right');
-  playTurnSwitchSound();
+  if (!firstTurn) playTurnSwitchSound();
+  firstTurn = false;
 }
 
 
@@ -663,7 +903,16 @@ function getFlavorText(dist, max) {
 
 function showGuessReveal(val, dist) {
   const overlay = document.getElementById('guess-reveal-overlay');
-  document.getElementById('guess-reveal-label').textContent = opponentName + ' guessed';
+  const revealLabel = document.getElementById('guess-reveal-label');
+  revealLabel.textContent = '';
+  const avImg = document.createElement('img');
+  avImg.width = 28;
+  avImg.height = 28;
+  avImg.classList.add('reveal-avatar');
+  avImg.src = 'img/' + opponentAvatar + '.svg';
+  avImg.alt = opponentAvatar;
+  revealLabel.appendChild(avImg);
+  revealLabel.appendChild(document.createTextNode(' ' + opponentName + ' guessed'));
   document.getElementById('guess-reveal-number').textContent = val;
 
   const flavor = getFlavorText(dist, gameConfig.max);
@@ -750,7 +999,7 @@ function handleFeedback(data) {
 
     if (gameConfig.limitGuesses && myGuessCount >= gameConfig.maxGuesses) {
       myExhausted = true;
-      conn.send({ type: 'guessesExhausted', closestGuess: guess, closestDist: knownHigh - knownLow });
+      conn.send({ type: 'guessesExhausted', howCloseYouGot: opponentBestDist });
       if (opponentExhausted) {
         resolveTie();
       } else {
@@ -766,12 +1015,12 @@ function handleFeedback(data) {
 // ===== Tie Resolution =====
 function resolveTie() {
   stopTurnTimer();
-  const myDist = knownHigh - knownLow;
-  const theirDist = opponentBestDist;
+  const howCloseTheyGot = opponentBestDist;
+  const howCloseIGot = opponentExhaustedData ? opponentExhaustedData.howCloseYouGot : Infinity;
 
-  if (myDist < theirDist) {
+  if (howCloseIGot < howCloseTheyGot) {
     setTimeout(() => endGame(true, null, 'tie-win'), 600);
-  } else if (theirDist < myDist) {
+  } else if (howCloseTheyGot < howCloseIGot) {
     setTimeout(() => endGame(false, null, 'tie-lose'), 600);
   } else {
     setTimeout(() => endGame(null, null, 'draw'), 600);
@@ -830,16 +1079,21 @@ function endGame(iWon, winningGuess, tieType) {
   emojiEl.classList.remove('shake');
 
   const opponentTauntEl = document.getElementById('opponent-taunt');
-  if (opponentTauntEl) opponentTauntEl.textContent = '';
+  if (opponentTauntEl) {
+    opponentTauntEl.textContent = '';
+    opponentTauntEl.classList.remove('show');
+  }
+
+  const goSvg = document.getElementById('gameover-svg');
 
   if (isDraw) {
-    emojiEl.textContent = '⚔️';
+    goSvg.querySelector('use').setAttribute('href', '#ico-draw');
     textEl.textContent = 'It’s a Draw!';
     textEl.className = 'winner-text draw';
     subEl.textContent = 'Both ran out of guesses — equally close!';
     playLoseSound();
   } else if (iWon) {
-    emojiEl.textContent = '🏆';
+    goSvg.querySelector('use').setAttribute('href', '#ico-trophy');
     textEl.textContent = 'You Win!';
     textEl.className = 'winner-text win';
     if (tieType === 'tie-win') {
@@ -854,7 +1108,7 @@ function endGame(iWon, winningGuess, tieType) {
     playWinSound();
     spawnConfetti();
   } else {
-    emojiEl.textContent = '😔';
+    goSvg.querySelector('use').setAttribute('href', '#ico-lose');
     emojiEl.classList.add('shake');
     textEl.textContent = 'You Lose';
     textEl.className = 'winner-text lose';
@@ -888,6 +1142,7 @@ function endGame(iWon, winningGuess, tieType) {
   showScreen('gameover');
   populateTaunts(iWon === true);
   startAutoRematch();
+  saveSession();
 }
 
 // ===== Auto Rematch =====
@@ -904,6 +1159,7 @@ function startAutoRematch() {
     updateRematchUI(timeLeft);
     if (timeLeft <= 0) {
       stopAutoRematch();
+      if (!conn || !conn.open) return;
       playAgainSent = true;
       conn.send({ type: 'playAgain' });
       document.getElementById('play-again-status').textContent = 'Waiting for ' + opponentName + '…';
@@ -990,6 +1246,7 @@ function startNewRound() {
 // ===== Leave / Reset =====
 function leaveGame() {
   stopAutoRematch();
+  clearSession();
   if (conn) conn.close();
   if (peer) peer.destroy();
   resetState();
@@ -1029,8 +1286,13 @@ function resetState() {
   awaitingFeedback = false;
   myHistoryCount = 0;
   opponentHistoryCount = 0;
+  gameCode = '';
+  myAvatar = '';
+  opponentAvatar = '';
+  firstTurn = true;
   if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
   if (turnTimerId) { clearInterval(turnTimerId); turnTimerId = null; }
+  if (peerTimeoutId) { clearTimeout(peerTimeoutId); peerTimeoutId = null; }
 }
 
 // ===== Init =====
@@ -1060,11 +1322,116 @@ function resetState() {
     });
   }
 
-  const params = new URLSearchParams(window.location.search);
-  const autoJoinCode = params.get('g');
-  if (autoJoinCode) {
-    window.history.replaceState({}, '', window.location.pathname);
-    document.getElementById('join-id-input').value = autoJoinCode.toUpperCase();
-    setTimeout(() => joinGame(), CONFIG.timing.autoJoinDelay);
+  const session = getSession();
+  if (session && session.gameCode) {
+    attemptReconnect(session);
+  } else {
+    const params = new URLSearchParams(window.location.search);
+    const autoJoinCode = params.get('g');
+    if (autoJoinCode) {
+      window.history.replaceState({}, '', window.location.pathname);
+      document.getElementById('join-id-input').value = autoJoinCode.toUpperCase();
+      setTimeout(() => joinGame(), CONFIG.timing.autoJoinDelay);
+    }
   }
 })();
+
+function attemptReconnect(session) {
+  isReconnecting = true;
+  gameCode = session.gameCode;
+  isCreator = session.isCreator;
+  myName = session.myName || myName;
+  myAvatar = session.myAvatar || '';
+  opponentName = session.opponentName || '';
+  opponentAvatar = session.opponentAvatar || '';
+  myNumber = session.myNumber;
+  myNumberLocked = session.myNumberLocked || false;
+  gameConfig = session.gameConfig || gameConfig;
+  sessionMyWins = session.sessionMyWins || 0;
+  sessionOpponentWins = session.sessionOpponentWins || 0;
+  sessionRounds = session.sessionRounds || 0;
+  knownLow = session.knownLow || 1;
+  knownHigh = session.knownHigh || gameConfig.max;
+  opponentKnownLow = session.opponentKnownLow || 1;
+  opponentKnownHigh = session.opponentKnownHigh || gameConfig.max;
+  isMyTurn = session.isMyTurn || false;
+
+  showReconnectOverlay('Reconnecting…');
+
+  const prefix = CONFIG.game.codePrefix;
+
+  if (isCreator) {
+    tryRegisterAsCreator(prefix + gameCode);
+  } else {
+    peer = new Peer();
+    peer.on('open', () => {
+      tryConnectToCreator(prefix + gameCode);
+    });
+    peer.on('error', () => {
+      hideReconnectOverlay();
+      clearSession();
+      isReconnecting = false;
+      showToast('Could not reconnect.');
+    });
+  }
+
+  setTimeout(() => {
+    if (isReconnecting) {
+      hideReconnectOverlay();
+      clearSession();
+      isReconnecting = false;
+      if (peer) peer.destroy();
+      resetState();
+      showToast('Reconnection timed out.');
+    }
+  }, CONFIG.connection.reconnectWait);
+}
+
+function tryRegisterAsCreator(peerId) {
+  if (!isReconnecting) return;
+  if (peer) peer.destroy();
+  peer = new Peer(peerId);
+  peer.on('open', () => {
+    peer.on('connection', incoming => {
+      conn = incoming;
+      conn.on('open', () => setupConnection(true));
+    });
+  });
+  peer.on('error', err => {
+    if (err.type === 'unavailable-id' && isReconnecting) {
+      setTimeout(() => tryRegisterAsCreator(peerId), CONFIG.connection.reconnectRetryInterval);
+    }
+  });
+}
+
+function tryConnectToCreator(peerId) {
+  if (!isReconnecting || !peer || peer.destroyed) return;
+  let connected = false;
+  const attempt = peer.connect(peerId, { reliable: true });
+  attempt.on('open', () => {
+    if (connected) return;
+    connected = true;
+    conn = attempt;
+    if (reconnectRetryId) { clearInterval(reconnectRetryId); reconnectRetryId = null; }
+    setupConnection(true);
+  });
+  attempt.on('error', () => {
+    reconnectRetryId = setInterval(() => {
+      if (!isReconnecting || !peer || peer.destroyed || connected) {
+        clearInterval(reconnectRetryId);
+        reconnectRetryId = null;
+        return;
+      }
+      const retry = peer.connect(peerId, { reliable: true });
+      retry.on('open', () => {
+        if (connected) { retry.close(); return; }
+        connected = true;
+        conn = retry;
+        clearInterval(reconnectRetryId);
+        reconnectRetryId = null;
+        setupConnection(true);
+      });
+      retry.on('error', () => {});
+    }, CONFIG.connection.reconnectRetryInterval);
+  });
+}

@@ -83,6 +83,12 @@ const CONFIG = {
     maxHistory: 50
   },
 
+  connection: {
+    peerTimeout: 15000,
+    reconnectWait: 30000,
+    reconnectRetryInterval: 3000
+  },
+
   social: {
     reactions: ['🔥','😂','🤔','👏','😱','💀'],
     quickChat: {

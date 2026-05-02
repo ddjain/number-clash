@@ -1,3 +1,13 @@
+let chatBubbleTimer = null;
+let lastSocialSend = 0;
+
+function socialCooldown() {
+  const now = Date.now();
+  if (now - lastSocialSend < 500) return true;
+  lastSocialSend = now;
+  return false;
+}
+
 function populateReactions() {
   const tray = document.getElementById('reaction-tray');
   if (!tray) return;
@@ -12,7 +22,7 @@ function populateReactions() {
 }
 
 function sendReaction(emoji) {
-  if (!conn || !conn.open) return;
+  if (!conn || !conn.open || socialCooldown()) return;
   conn.send({ type: 'reaction', emoji: emoji });
   showFloatingReaction(emoji);
 }
@@ -55,7 +65,7 @@ function populateChatPicker() {
 }
 
 function sendChat(msg) {
-  if (!conn || !conn.open) return;
+  if (!conn || !conn.open || socialCooldown()) return;
   conn.send({ type: 'chat', msg: msg });
   showChatBubble(msg, myName);
   const picker = document.getElementById('chat-picker');
@@ -65,11 +75,12 @@ function sendChat(msg) {
 function showChatBubble(msg, name) {
   const el = document.getElementById('chat-bubble');
   if (!el) return;
+  if (chatBubbleTimer) clearTimeout(chatBubbleTimer);
   el.textContent = name + ': ' + msg;
   el.classList.remove('show');
   void el.offsetWidth;
   el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), CONFIG.social.chatDisplayDuration);
+  chatBubbleTimer = setTimeout(() => { el.classList.remove('show'); chatBubbleTimer = null; }, CONFIG.social.chatDisplayDuration);
 }
 
 function populateTaunts(isWinner) {

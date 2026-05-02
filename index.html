@@ -15,9 +15,45 @@
 </head>
 <body>
 
+  <!-- Shared SVG Defs -->
+  <svg style="display:none" aria-hidden="true">
+    <defs>
+      <linearGradient id="g-accent" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#8b5cf6"/>
+        <stop offset="100%" stop-color="#34d399"/>
+      </linearGradient>
+      <symbol id="ico-logo" viewBox="0 0 48 48">
+        <rect rx="12" width="48" height="48" fill="url(#g-accent)" opacity="0.15"/>
+        <text x="24" y="20" text-anchor="middle" dominant-baseline="central" font-size="16" font-weight="900" fill="url(#g-accent)" font-family="system-ui,sans-serif">NC</text>
+        <path d="M14 30 L24 38 L34 30" stroke="url(#g-accent)" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </symbol>
+      <symbol id="ico-trophy" viewBox="0 0 48 48">
+        <path d="M16 8h16v4h6a2 2 0 0 1 2 2v4c0 3.3-2.7 6-6 6h-1.2A10 10 0 0 1 25 30.9V34h4a2 2 0 0 1 2 2v4H17v-4a2 2 0 0 1 2-2h4v-3.1A10 10 0 0 1 15.2 24H14c-3.3 0-6-2.7-6-6v-4a2 2 0 0 1 2-2h6V8z" fill="url(#g-accent)"/>
+        <rect x="10" y="14" width="4" height="6" rx="1" fill="url(#g-accent)" opacity="0.5"/>
+        <rect x="34" y="14" width="4" height="6" rx="1" fill="url(#g-accent)" opacity="0.5"/>
+        <path d="M20 16l4 3 4-3" stroke="#fff" stroke-width="1.5" fill="none" opacity="0.6" stroke-linecap="round"/>
+      </symbol>
+      <symbol id="ico-lose" viewBox="0 0 48 48">
+        <circle cx="24" cy="24" r="18" fill="none" stroke="#ef4444" stroke-width="2" opacity="0.3"/>
+        <circle cx="18" cy="21" r="2" fill="#ef4444"/>
+        <circle cx="30" cy="21" r="2" fill="#ef4444"/>
+        <path d="M17 32 Q24 26 31 32" stroke="#ef4444" stroke-width="2" fill="none" stroke-linecap="round"/>
+      </symbol>
+      <symbol id="ico-draw" viewBox="0 0 48 48">
+        <path d="M12 24 L20 16 L20 21 L28 21 L28 16 L36 24 L28 32 L28 27 L20 27 L20 32 Z" fill="url(#g-accent)" opacity="0.4"/>
+        <line x1="12" y1="24" x2="36" y2="24" stroke="#eab308" stroke-width="2" stroke-dasharray="3 3"/>
+      </symbol>
+      <!-- Difficulty icons -->
+      <symbol id="ico-easy" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"/><path d="M7 10.5l2 2 4-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="ico-medium" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"/><path d="M7 13V8l3 2.5L13 8v5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="ico-hard" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"/><path d="M10 5v6M8 8l2 3 2-3M7 14h6" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    </defs>
+  </svg>
+
   <!-- LOBBY SCREEN -->
   <div id="screen-lobby" class="screen active">
     <div class="title-row">
+      <svg class="nc-logo" width="40" height="40" aria-hidden="true"><use href="#ico-logo"/></svg>
       <h1>Number Clash</h1>
       <button class="btn btn-outline btn-sm btn-how-to-play" onclick="showRules()">&#9889; How to Play</button>
     </div>
@@ -39,9 +75,9 @@
       </div>
       <label>Difficulty</label>
       <div class="difficulty-row" id="difficulty-row">
-        <button class="btn btn-diff" data-mode="easy" onclick="setDifficulty('easy')">Easy<span class="diff-detail">1-50 &middot; 8 guesses</span></button>
-        <button class="btn btn-diff active" data-mode="medium" onclick="setDifficulty('medium')">Medium<span class="diff-detail">1-100 &middot; 8 guesses</span></button>
-        <button class="btn btn-diff" data-mode="hard" onclick="setDifficulty('hard')">Hard<span class="diff-detail">1-500 &middot; 12 guesses</span></button>
+        <button class="btn btn-diff" data-mode="easy" onclick="setDifficulty('easy')"><svg class="diff-icon" width="16" height="16"><use href="#ico-easy"/></svg>Easy<span class="diff-detail">1-50 &middot; 8 guesses</span></button>
+        <button class="btn btn-diff active" data-mode="medium" onclick="setDifficulty('medium')"><svg class="diff-icon" width="16" height="16"><use href="#ico-medium"/></svg>Medium<span class="diff-detail">1-100 &middot; 8 guesses</span></button>
+        <button class="btn btn-diff" data-mode="hard" onclick="setDifficulty('hard')"><svg class="diff-icon" width="16" height="16"><use href="#ico-hard"/></svg>Hard<span class="diff-detail">1-500 &middot; 12 guesses</span></button>
       </div>
       <label class="toggle-row" style="margin-top:10px;">
         <input type="checkbox" id="limit-guesses-toggle" checked onchange="toggleGuessLimit(this.checked)" />
@@ -57,7 +93,6 @@
         <code id="game-id-text"></code>
         <div class="game-id-actions">
           <button class="btn btn-outline btn-sm" id="btn-copy" onclick="copyGameId()">Copy</button>
-          <button class="btn btn-sm btn-whatsapp" onclick="shareWhatsApp()">WhatsApp</button>
           <button class="btn btn-outline btn-sm" onclick="shareGame()">Share</button>
         </div>
       </div>
@@ -91,7 +126,10 @@
 
   <!-- SETUP SCREEN -->
   <div id="screen-setup" class="screen">
-    <h1>Number Clash</h1>
+    <div class="title-row title-row-compact">
+      <svg class="nc-logo" width="32" height="32" aria-hidden="true"><use href="#ico-logo"/></svg>
+      <h1>Number Clash</h1>
+    </div>
     <p class="subtitle">Lock in your secret. Make it count.</p>
 
     <div class="card">
@@ -113,10 +151,12 @@
       <div class="card-title">Players</div>
       <div class="setup-status">
         <div class="player-status">
+          <img class="player-avatar" id="avatar-self" width="36" height="36" src="img/fox.svg" alt="You" />
           <div id="self-check" class="check pending">&#8230;</div>
           <span id="setup-self-name">You</span>
         </div>
         <div class="player-status">
+          <img class="player-avatar" id="avatar-opponent" width="36" height="36" src="img/wolf.svg" alt="Opponent" />
           <div id="opponent-check" class="check pending">&#8230;</div>
           <span id="setup-opponent-name">Opponent</span>
         </div>
@@ -126,7 +166,10 @@
 
   <!-- GAME SCREEN -->
   <div id="screen-game" class="screen">
-    <h1>Number Clash</h1>
+    <div class="title-row title-row-compact">
+      <svg class="nc-logo" width="32" height="32" aria-hidden="true"><use href="#ico-logo"/></svg>
+      <h1>Number Clash</h1>
+    </div>
 
     <div class="game-top-bar" id="game-top-bar">
       <div class="top-bar-score" id="top-bar-score" style="display:none;">
@@ -140,7 +183,10 @@
     </div>
 
     <div class="turn-block">
-      <div id="turn-indicator" class="turn-indicator turn-yours">Your move &mdash; take a shot!</div>
+      <div id="turn-indicator" class="turn-indicator turn-yours">
+        <img class="turn-avatar" id="turn-avatar" width="28" height="28" src="img/fox.svg" alt="" />
+        <span id="turn-indicator-text">Your move &mdash; take a shot!</span>
+      </div>
       <div class="timer-bar-container" id="timer-bar-container">
         <div class="timer-bar-fill" id="timer-bar-fill"></div>
         <span class="timer-text" id="timer-text"></span>
@@ -215,7 +261,10 @@
 
   <!-- GAME OVER SCREEN -->
   <div id="screen-gameover" class="screen">
-    <h1>Number Clash</h1>
+    <div class="title-row title-row-compact">
+      <svg class="nc-logo" width="32" height="32" aria-hidden="true"><use href="#ico-logo"/></svg>
+      <h1>Number Clash</h1>
+    </div>
 
     <div id="session-score-gameover" class="session-score">
       <div style="color:var(--text-dim);font-size:0.75rem;">Session Score</div>
@@ -223,7 +272,9 @@
     </div>
 
     <div class="card gameover-card" id="gameover-card">
-      <div class="trophy" id="gameover-emoji"></div>
+      <div class="trophy" id="gameover-emoji">
+        <svg id="gameover-svg" class="gameover-icon" width="64" height="64"><use href="#ico-trophy"/></svg>
+      </div>
       <div id="gameover-text" class="winner-text"></div>
       <p id="gameover-sub" style="color:var(--text-dim);font-size:0.9rem;"></p>
       <p id="gameover-closest" style="color:var(--text-dim);font-size:0.8rem;margin-top:4px;"></p>
@@ -275,6 +326,13 @@
         <div class="rule-extra"><strong>Tie?</strong> If both players run out of guesses, the closest guess wins.</div>
       </div>
       <button class="btn btn-primary btn-block" onclick="hideRules()" style="margin-top:20px;">Let's Clash!</button>
+    </div>
+  </div>
+
+  <div id="reconnect-overlay" class="reconnect-overlay">
+    <div class="reconnect-content">
+      <div class="reconnect-spinner"></div>
+      <p id="reconnect-text">Reconnecting…</p>
     </div>
   </div>
 

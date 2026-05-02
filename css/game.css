@@ -72,7 +72,13 @@
   font-weight: 700;
   font-size: 1.1rem;
   transition: all 0.25s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
+
+.turn-avatar { flex-shrink: 0; border-radius: 50%; }
 
 .turn-indicator.slide-in-left {
   animation: slideInFromLeft 0.25s ease;
@@ -343,7 +349,13 @@
   font-size: 1rem;
   color: var(--text-dim);
   margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
+
+.reveal-avatar { flex-shrink: 0; vertical-align: middle; border-radius: 50%; }
 
 .guess-reveal-number {
   font-size: 4rem;
@@ -372,7 +384,46 @@
   100% { opacity: 1; transform: scale(1); }
 }
 
-/* --- Game: Manual Feedback Overlay --- */
+/* --- Reconnect Overlay --- */
+.reconnect-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.9);
+  z-index: 250;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 16px;
+}
+.reconnect-overlay.show { display: flex; }
+
+.reconnect-content {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.reconnect-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.reconnect-content p {
+  color: var(--text-dim);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
 
 /* --- Mobile keyboard handling --- */
 @supports (height: 1dvh) {

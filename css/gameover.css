@@ -1,6 +1,8 @@
 /* --- Game Over --- */
 .gameover-card { text-align: center; position: relative; overflow: hidden; }
-.gameover-card .trophy { font-size: 3rem; margin-bottom: 8px; }
+.gameover-card .trophy { font-size: 3rem; margin-bottom: 8px; line-height: 1; }
+
+.gameover-icon { display: inline-block; }
 
 .gameover-card .trophy.shake {
   animation: headShake 0.6s ease-in-out;
