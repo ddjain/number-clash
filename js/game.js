@@ -316,6 +316,13 @@ function hideReconnectOverlay() {
   document.getElementById('reconnect-overlay').classList.remove('show');
 }
 
+function forceNewSession() {
+  hideReconnectOverlay();
+  if (peer) peer.destroy();
+  cleanupAndLobby();
+  showToast('Session ended.');
+}
+
 // ===== Connection Setup =====
 function setupConnection(isRejoin) {
   conn.on('data', handleMessage);
